@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.433">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Anindita Basu &amp; Vikram Bahadur">
+<meta name="dcterms.date" content="2024-06-03">
+
+<title>Time Series 2024 Project Topic 1 (FORECASTING FINANCIAL INSTRUMENTS PRICES WITH VECM AND ARIMA MODELS)</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="TSA_2024_TOPIC_1_files/libs/clipboard/clipboard.min.js"></script>
+<script src="TSA_2024_TOPIC_1_files/libs/quarto-html/quarto.js"></script>
+<script src="TSA_2024_TOPIC_1_files/libs/quarto-html/popper.min.js"></script>
+<script src="TSA_2024_TOPIC_1_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="TSA_2024_TOPIC_1_files/libs/quarto-html/anchor.min.js"></script>
+<link href="TSA_2024_TOPIC_1_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="TSA_2024_TOPIC_1_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="TSA_2024_TOPIC_1_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="TSA_2024_TOPIC_1_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="TSA_2024_TOPIC_1_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<style>html{ scroll-behavior: smooth; }</style>
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article toc-left">
+<div id="quarto-sidebar-toc-left" class="sidebar toc-left">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Contents</h2>
+   
+  <ul class="collapse">
+  <li><a href="#importing-the-data" id="toc-importing-the-data" class="nav-link active" data-scroll-target="#importing-the-data">1 Importing the data</a></li>
+  <li><a href="#testing-cointegration" id="toc-testing-cointegration" class="nav-link" data-scroll-target="#testing-cointegration">2 Testing cointegration</a></li>
+  </ul>
+</nav>
+</div>
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Time Series 2024 Project Topic 1 (FORECASTING FINANCIAL INSTRUMENTS PRICES WITH VECM AND ARIMA MODELS)</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Anindita Basu &amp; Vikram Bahadur </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">June 3, 2024</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="importing-the-data" class="level2">
+<h2 class="anchored" data-anchor-id="importing-the-data">1 Importing the data</h2>
+<p>First, let’s load necessary libraries:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(xts)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lmtest)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Let’s also load the additional function:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">"../code/functions/testdf.R"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We will work with the Data concerning price indices:</p>
+<ul>
+<li>CPI - Consumer Price Index for All Urban Consumers: Energy, 1982=100, https://fred.stlouisfed.org/series/CPIENGSL</li>
+<li>PPI - Producer Price Index: Finished Energy Goods, 1982=100, https://fred.stlouisfed.org/series/WPSFD4121</li>
+<li>Monthly data: 01.1986-02.2019</li>
+<li>Source: U.S. Department of Labor, Bureau of Labor Statistics</li>
+<li>Economic Data - FRED(R) II - http://research.stlouisfed.org/fred2/</li>
+</ul>
+<p>Now, we have to import the data:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>TS <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../data/TSA_2024_project_data_1.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The structure of the data:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>TS <span class="sc">%&gt;%</span> <span class="fu">glimpse</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 300
+Columns: 11
+$ date &lt;chr&gt; "2021-06-01", "2021-06-02", "2021-06-03", "2021-06-04", "2021-06-…
+$ y1   &lt;dbl&gt; 176.04, 173.37, 173.42, 178.85, 175.39, 173.89, 167.80, 162.47, 1…
+$ y2   &lt;dbl&gt; 173.57, 173.57, 173.57, 174.52, 174.46, 174.54, 174.57, 175.37, 1…
+$ y3   &lt;dbl&gt; 173.57, 173.57, 175.70, 177.89, 181.10, 184.44, 187.00, 188.86, 1…
+$ y4   &lt;dbl&gt; 188.66, 188.46, 188.57, 188.78, 188.11, 187.61, 188.22, 188.68, 1…
+$ y5   &lt;dbl&gt; 183.66, 183.52, 183.75, 182.79, 185.46, 190.18, 196.22, 201.14, 2…
+$ y6   &lt;dbl&gt; 178.78, 181.10, 187.25, 190.82, 187.30, 195.26, 196.95, 207.64, 2…
+$ y7   &lt;dbl&gt; 168.46, 168.41, 168.47, 170.08, 170.15, 170.33, 170.32, 171.42, 1…
+$ y8   &lt;dbl&gt; 173.57, 173.57, 173.57, 173.57, 172.94, 171.78, 173.37, 174.22, 1…
+$ y9   &lt;dbl&gt; 173.57, 173.57, 173.57, 173.18, 174.50, 176.99, 179.91, 182.35, 1…
+$ y10  &lt;dbl&gt; 188.35, 188.37, 189.36, 190.46, 192.73, 194.14, 195.44, 196.21, 1…</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(TS)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        date     y1     y2     y3     y4     y5     y6     y7     y8     y9
+1 2021-06-01 176.04 173.57 173.57 188.66 183.66 178.78 168.46 173.57 173.57
+2 2021-06-02 173.37 173.57 173.57 188.46 183.52 181.10 168.41 173.57 173.57
+3 2021-06-03 173.42 173.57 175.70 188.57 183.75 187.25 168.47 173.57 173.57
+4 2021-06-04 178.85 174.52 177.89 188.78 182.79 190.82 170.08 173.57 173.18
+5 2021-06-05 175.39 174.46 181.10 188.11 185.46 187.30 170.15 172.94 174.50
+6 2021-06-06 173.89 174.54 184.44 187.61 190.18 195.26 170.33 171.78 176.99
+     y10
+1 188.35
+2 188.37
+3 189.36
+4 190.46
+5 192.73
+6 194.14</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span>(TS)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          date     y1     y2     y3     y4    y5    y6     y7     y8     y9
+295 2022-03-22 268.68 196.26 289.20 174.51 36.93 97.94 204.83 145.53 100.31
+296 2022-03-23 266.55 196.34 288.83 174.58 36.87 87.23 205.03 145.76 100.22
+297 2022-03-24 266.38 196.25 287.98 174.18 35.33 78.05 205.08 144.81  99.39
+298 2022-03-25 272.44 197.49 287.54 174.47 34.93 85.77 206.84 144.90  99.22
+299 2022-03-26 267.64 198.03 286.01 173.46 35.01 95.43 208.08 143.75  99.22
+300 2022-03-27 264.95 198.61 285.43 174.40 33.51 95.25 208.76 145.46  98.49
+       y10
+295 246.30
+296 245.85
+297 245.64
+298 245.77
+299 244.87
+300 244.08</code></pre>
+</div>
+</div>
+<p>We have to correct the type of the <code>date</code> variable:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>TS<span class="sc">$</span>date <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(TS<span class="sc">$</span>date, <span class="at">format =</span> <span class="st">"%Y-%m-%d"</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>TS <span class="sc">%&gt;%</span> <span class="fu">glimpse</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 300
+Columns: 11
+$ date &lt;date&gt; 2021-06-01, 2021-06-02, 2021-06-03, 2021-06-04, 2021-06-05, 2021…
+$ y1   &lt;dbl&gt; 176.04, 173.37, 173.42, 178.85, 175.39, 173.89, 167.80, 162.47, 1…
+$ y2   &lt;dbl&gt; 173.57, 173.57, 173.57, 174.52, 174.46, 174.54, 174.57, 175.37, 1…
+$ y3   &lt;dbl&gt; 173.57, 173.57, 175.70, 177.89, 181.10, 184.44, 187.00, 188.86, 1…
+$ y4   &lt;dbl&gt; 188.66, 188.46, 188.57, 188.78, 188.11, 187.61, 188.22, 188.68, 1…
+$ y5   &lt;dbl&gt; 183.66, 183.52, 183.75, 182.79, 185.46, 190.18, 196.22, 201.14, 2…
+$ y6   &lt;dbl&gt; 178.78, 181.10, 187.25, 190.82, 187.30, 195.26, 196.95, 207.64, 2…
+$ y7   &lt;dbl&gt; 168.46, 168.41, 168.47, 170.08, 170.15, 170.33, 170.32, 171.42, 1…
+$ y8   &lt;dbl&gt; 173.57, 173.57, 173.57, 173.57, 172.94, 171.78, 173.37, 174.22, 1…
+$ y9   &lt;dbl&gt; 173.57, 173.57, 173.57, 173.18, 174.50, 176.99, 179.91, 182.35, 1…
+$ y10  &lt;dbl&gt; 188.35, 188.37, 189.36, 190.46, 192.73, 194.14, 195.44, 196.21, 1…</code></pre>
+</div>
+</div>
+<p>Let’s also transform the <code>data.frame</code> into an <code>xts</code> object</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>TS <span class="ot">&lt;-</span> <span class="fu">xts</span>(TS[, <span class="sc">-</span><span class="dv">1</span>], <span class="at">order.by =</span> TS<span class="sc">$</span>date)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We will work the the <code>cpi</code> and <code>ppi</code> variables. Let’s create their first differences.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>TS<span class="sc">$</span>dy1 <span class="ot">&lt;-</span> <span class="fu">diff.xts</span>(TS<span class="sc">$</span>y1)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>TS<span class="sc">$</span>dy2 <span class="ot">&lt;-</span> <span class="fu">diff.xts</span>(TS<span class="sc">$</span>y2)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>TS<span class="sc">$</span>dy3 <span class="ot">&lt;-</span> <span class="fu">diff.xts</span>(TS<span class="sc">$</span>y3)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>TS<span class="sc">$</span>dy4 <span class="ot">&lt;-</span> <span class="fu">diff.xts</span>(TS<span class="sc">$</span>y4)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>TS<span class="sc">$</span>dy5 <span class="ot">&lt;-</span> <span class="fu">diff.xts</span>(TS<span class="sc">$</span>y5)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>TS<span class="sc">$</span>dy6 <span class="ot">&lt;-</span> <span class="fu">diff.xts</span>(TS<span class="sc">$</span>y6)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>TS<span class="sc">$</span>dy7 <span class="ot">&lt;-</span> <span class="fu">diff.xts</span>(TS<span class="sc">$</span>y7)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>TS<span class="sc">$</span>dy8 <span class="ot">&lt;-</span> <span class="fu">diff.xts</span>(TS<span class="sc">$</span>y8)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>TS<span class="sc">$</span>dy9 <span class="ot">&lt;-</span> <span class="fu">diff.xts</span>(TS<span class="sc">$</span>y9)</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>TS<span class="sc">$</span>dy10 <span class="ot">&lt;-</span> <span class="fu">diff.xts</span>(TS<span class="sc">$</span>y10)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(TS)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>               y1     y2     y3     y4     y5     y6     y7     y8     y9
+2021-06-01 176.04 173.57 173.57 188.66 183.66 178.78 168.46 173.57 173.57
+2021-06-02 173.37 173.57 173.57 188.46 183.52 181.10 168.41 173.57 173.57
+2021-06-03 173.42 173.57 175.70 188.57 183.75 187.25 168.47 173.57 173.57
+2021-06-04 178.85 174.52 177.89 188.78 182.79 190.82 170.08 173.57 173.18
+2021-06-05 175.39 174.46 181.10 188.11 185.46 187.30 170.15 172.94 174.50
+2021-06-06 173.89 174.54 184.44 187.61 190.18 195.26 170.33 171.78 176.99
+              y10   dy1   dy2  dy3   dy4   dy5   dy6   dy7   dy8   dy9 dy10
+2021-06-01 188.35    NA    NA   NA    NA    NA    NA    NA    NA    NA   NA
+2021-06-02 188.37 -2.67  0.00 0.00 -0.20 -0.14  2.32 -0.05  0.00  0.00 0.02
+2021-06-03 189.36  0.05  0.00 2.13  0.11  0.23  6.15  0.06  0.00  0.00 0.99
+2021-06-04 190.46  5.43  0.95 2.19  0.21 -0.96  3.57  1.61  0.00 -0.39 1.10
+2021-06-05 192.73 -3.46 -0.06 3.21 -0.67  2.67 -3.52  0.07 -0.63  1.32 2.27
+2021-06-06 194.14 -1.50  0.08 3.34 -0.50  4.72  7.96  0.18 -1.16  2.49 1.41</code></pre>
+</div>
+</div>
+<p>Next, we plot both variables on the graph:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(TS[, <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>],</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>     <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"black"</span>, <span class="st">"blue"</span>, <span class="st">"green"</span>, <span class="st">"yellow"</span>, <span class="st">"brown"</span>, <span class="st">"red"</span>, <span class="st">"orange"</span>, <span class="st">"khaki"</span>, <span class="st">"skyblue"</span>, <span class="st">"purple"</span>),</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">major.ticks =</span> <span class="st">"years"</span>, </span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>     <span class="at">grid.ticks.on =</span> <span class="st">"years"</span>,</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>     <span class="at">grid.ticks.lty =</span> <span class="dv">3</span>,</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"main"</span>,</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>     <span class="at">legend.loc =</span> <span class="st">"topleft"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Diff</p>
+<pre><code>
+
+plot(TS[, 11:20],
+
+     major.ticks = "months", 
+     grid.ticks.on = "days",
+
+     main = "...",
+     legend.loc = "..")</code></pre>
+<p>Alternatively, using the <code>ggplot2</code> package:</p>
+</section>
+<section id="testing-cointegration" class="level2">
+<h2 class="anchored" data-anchor-id="testing-cointegration">2 Testing cointegration</h2>
+<p>In the next step, we will perform the tests of integration order.</p>
+<p>First, let’s apply the ADF test for the <code>cpi</code> variable and its first differences.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>y1,</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations       adf     p_adf    bgodfrey       p_bg
+1             0 -1.650473 0.4424618 3.241635190 0.07178896
+2             1 -1.824610 0.3776076 0.001007918 0.97467324
+3             2 -1.838503 0.3724333 0.001871646 0.96549227
+4             3 -1.575030 0.4705592 0.033019599 0.85580800</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>dy1, </span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-11-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations        adf p_adf      bgodfrey      p_bg
+1             0 -15.565954  0.01 0.00008054226 0.9928395
+2             1 -11.418055  0.01 0.00020022839 0.9887101
+3             2 -11.107373  0.01 0.02997494392 0.8625471
+4             3  -8.901743  0.01 0.00039408259 0.9841618</code></pre>
+</div>
+</div>
+<p>Since we can reject the null in the case of the first differences, we can conclude that the y1 is from I(1).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>y2,</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations        adf     p_adf       bgodfrey         p_bg
+1             0  0.6976820 0.9900000 123.7381593067 9.612731e-29
+2             1 -0.5613589 0.8480833  11.7643483763 6.037601e-04
+3             2 -1.1293522 0.6365441   0.0010575970 9.740568e-01
+4             3 -1.1373793 0.6335546   0.0009233425 9.757588e-01</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>dy2, </span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-12-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations       adf p_adf       bgodfrey         p_bg
+1             0 -7.989698  0.01 11.40407820720 0.0007328305
+2             1 -5.274622  0.01  0.00505296646 0.9433307263
+3             2 -5.093104  0.01  0.00078625388 0.9776300736
+4             3 -4.960609  0.01  0.00001867225 0.9965522398</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>y3,</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations       adf     p_adf      bgodfrey         p_bg
+1             0 -1.236545 0.5966220 226.055767634 4.320616e-51
+2             1 -1.879758 0.3570684  11.299623173 7.752282e-04
+3             2 -1.404671 0.5340065   0.002880886 9.571950e-01
+4             3 -1.390255 0.5393753   0.004112625 9.488669e-01</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>dy3, </span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-13-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations       adf p_adf     bgodfrey        p_bg
+1             0 -4.529095  0.01 11.909159398 0.000558586
+2             1 -5.539558  0.01  0.007551809 0.930750088
+3             2 -5.387325  0.01  0.004472689 0.946678695
+4             3 -4.529314  0.01  0.007666338 0.930228281</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>y4,</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations       adf     p_adf    bgodfrey       p_bg
+1             0 -1.494391 0.5005919 5.489991536 0.01912564
+2             1 -1.523066 0.4899123 0.010239621 0.91939883
+3             2 -1.564103 0.4746287 0.000797029 0.97747735
+4             3 -1.606214 0.4589453 0.008754567 0.92545404</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>dy4, </span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-14-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations        adf p_adf     bgodfrey      p_bg
+1             0 -14.976766  0.01 0.0087075148 0.9256541
+2             1 -10.799792  0.01 0.0003821666 0.9844031
+3             2  -8.919976  0.01 0.0067849676 0.9343518
+4             3  -5.921353  0.01 0.5225322881 0.4697635</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>y5,</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations        adf     p_adf    bgodfrey         p_bg
+1             0  0.6234327 0.9900000 218.9601184 1.524792e-49
+2             1 -1.7851697 0.3922964  25.4345834 4.576401e-07
+3             2 -0.9704224 0.6957347   0.9759952 3.231895e-01
+4             3 -1.2852087 0.5784981   0.0930106 7.603841e-01</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>dy5, </span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-15-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations       adf p_adf    bgodfrey            p_bg
+1             0 -4.783862  0.01 26.83547720 0.0000002215329
+2             1 -6.624693  0.01  0.93358586 0.3339328718434
+3             2 -5.245343  0.01  0.10370831 0.7474241009064
+4             3 -5.506683  0.01  0.01398566 0.9058608597585</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>y6,</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations        adf     p_adf     bgodfrey      p_bg
+1             0 -0.6336457 0.8211613 0.4571519140 0.4989580
+2             1 -0.4964736 0.8722487 0.0005071421 0.9820333
+3             2 -0.4444151 0.8916370 0.0010144790 0.9745910
+4             3 -0.3930213 0.9040193 0.0003159478 0.9858184</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>dy6, </span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-16-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations        adf p_adf     bgodfrey      p_bg
+1             0 -18.012092  0.01 0.0007932275 0.9775311
+2             1 -12.542031  0.01 0.0011870441 0.9725155
+3             2 -10.204864  0.01 0.0003550911 0.9849657
+4             3  -8.516099  0.01 0.0002669061 0.9869653</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>y7,</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations        adf     p_adf      bgodfrey         p_bg
+1             0  0.6979600 0.9900000 118.646839000 1.251388e-27
+2             1 -0.5365735 0.8573142  12.478656088 4.116282e-04
+3             2 -1.1320920 0.6355237   0.000186570 9.891020e-01
+4             3 -1.1469827 0.6299780   0.000645176 9.797357e-01</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>dy7, </span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-17-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations       adf p_adf      bgodfrey         p_bg
+1             0 -8.174416  0.01 12.1264287364 0.0004971223
+2             1 -5.277486  0.01  0.0030362304 0.9560572032
+3             2 -5.081266  0.01  0.0004968427 0.9822166504
+4             3 -5.006448  0.01  0.0003413420 0.9852595684</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>y8,</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations       adf     p_adf      bgodfrey         p_bg
+1             0 -1.479208 0.5062464 12.0381804638 0.0005212182
+2             1 -1.543628 0.4822543  0.0025524519 0.9597065804
+3             2 -1.554829 0.4780826  0.0002883662 0.9864514951
+4             3 -1.590099 0.4649471  0.0998735349 0.7519814499</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>dy8, </span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-18-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations        adf p_adf     bgodfrey      p_bg
+1             0 -13.993074  0.01 0.0016383310 0.9677134
+2             1 -10.691950  0.01 0.0001454344 0.9903780
+3             2  -8.519015  0.01 0.0900689717 0.7640895
+4             3  -5.601904  0.01 1.0258157271 0.3111435</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>y9,</span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations        adf     p_adf     bgodfrey         p_bg
+1             0  0.6277666 0.9900000 219.54892795 1.134421e-49
+2             1 -1.7991091 0.3871048  27.24224077 1.794940e-07
+3             2 -0.9483910 0.7039400   1.17095587 2.792049e-01
+4             3 -1.2993073 0.5732473   0.08914212 7.652706e-01</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>dy9, </span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-19-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations       adf p_adf    bgodfrey             p_bg
+1             0 -4.763719  0.01 28.67058055 0.00000008579729
+2             1 -6.682840  0.01  1.12584975 0.28866232922388
+3             2 -5.224669  0.01  0.10053442 0.75118925055468
+4             3 -5.511692  0.01  0.01624628 0.89857560949037</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>y10,</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-20-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations       adf     p_adf     bgodfrey         p_bg
+1             0 -1.258058 0.5886099 171.69703500 3.151575e-39
+2             1 -1.557003 0.4772730   6.99487993 8.174319e-03
+3             2 -1.677215 0.4325021   0.27090641 6.027244e-01
+4             3 -1.441749 0.5201975   0.06282286 8.020887e-01</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> TS<span class="sc">$</span>dy10, </span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-20-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations       adf p_adf    bgodfrey       p_bg
+1             0 -6.346090  0.01 6.597081104 0.01021461
+2             1 -4.839809  0.01 0.259772938 0.61027619
+3             2 -5.495769  0.01 0.052990722 0.81793859
+4             3 -4.757224  0.01 0.003056925 0.95590786</code></pre>
+</div>
+</div>
+<p>Since we can reject the null in the case of the first differences, we can conclude that the yi is from I(1) (i=1,2,3…..)</p>
+<p>Again, we can conclude that the <code>ppi</code> is integrated of order 1, as we can reject the null in the case of the first differences.</p>
+<p>As a result, both variables are <span class="math inline">\(\sim I(1)\)</span>, so in the next step we can check whether they are <strong>cointegrated</strong>.</p>
+<p>To estimating the cointegrating vector, we will estimate the following model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>model.coint <span class="ot">&lt;-</span> <span class="fu">lm</span>(y2 <span class="sc">~</span> y7, <span class="at">data =</span> TS)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Let’s examine the model summary:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model.coint)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = y2 ~ y7, data = TS)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.37836 -0.07828  0.00166  0.07699  0.35805 
+
+Coefficients:
+              Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept) 68.1875272  0.0354341    1924   &lt;2e-16 ***
+y7           0.6252180  0.0002248    2781   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.1242 on 298 degrees of freedom
+Multiple R-squared:      1, Adjusted R-squared:      1 
+F-statistic: 7.732e+06 on 1 and 298 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
+<p>Next, we have to test stationarity of residuals. What is the proper ADF statistic?</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">testdf</span>(<span class="at">variable =</span> <span class="fu">residuals</span>(model.coint), <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  augmentations        adf p_adf    bgodfrey      p_bg
+1             0 -16.100648  0.01 0.008387942 0.9270272
+2             1 -10.951684  0.01 0.003019590 0.9561777
+3             2  -9.786195  0.01 0.007105877 0.9328208
+4             3  -9.111277  0.01 0.004345257 0.9474427</code></pre>
+</div>
+</div>
+<p>What is the result of cointegration test? What is the cointegrating vector?</p>
+<p>The ADF test with no augmentations can be used its result is that non-stationarity of residuals is <strong>STRONGLY REJECTED</strong>, so residuals are <strong>stationary</strong>, which means that <code>ppi</code> and <code>cpi</code> are <strong>cointegrated</strong>.</p>
+<p>The cointegrating vector is [1, -68.188 , -0.625]</p>
+<p>which defines the cointegrating relationship as: 1 * cpi - 68.188 - 0.625 * ppi,</p>
+<p>Now, let’s create first lags of residuals and adding them to the dataset</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>Y <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">'y1'</span>, <span class="st">'y2'</span>, <span class="st">'y3'</span>, <span class="st">'y4'</span>, <span class="st">'y5'</span>, <span class="st">'y6'</span>, <span class="st">'y7'</span>, <span class="st">'y8'</span>, <span class="st">'y9'</span>, <span class="st">'y10'</span>)</span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">9</span>) {</span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (j <span class="cf">in</span> (i <span class="sc">+</span> <span class="dv">1</span>)<span class="sc">:</span><span class="dv">10</span>) {</span>
+<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>    model.coint <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="at">formula =</span> <span class="fu">paste</span>(Y[i], <span class="st">"~"</span>, Y[j]), <span class="at">data =</span> TS)</span>
+<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">testdf</span>(<span class="at">variable =</span> <span class="fu">residuals</span>(model.coint), <span class="at">max.augmentations =</span> <span class="dv">3</span>)</span>
+<span id="cb63-7"><a href="#cb63-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb63-8"><a href="#cb63-8" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-3.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-4.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-5.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-6.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-7.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-8.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-9.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-10.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-11.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-12.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-13.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-14.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-15.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-16.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-17.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-18.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-19.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-20.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-21.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-22.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-23.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-24.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-25.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-26.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-27.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-28.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-29.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-30.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-31.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-32.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-33.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-34.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-35.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-36.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-37.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-38.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-39.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-40.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-41.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-42.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-43.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-44.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="TSA_2024_TOPIC_1_files/figure-html/unnamed-chunk-24-45.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>``{r} ppi_cpi$lresid &lt;- lag.xts(residuals(model.coint))</p>
+<pre><code>
+## 3 Estimating ECM
+
+We are ready to estimate the ECM model, which is described by the following functional form:
+
+$$\Delta \mathsf{cpi}_t = \alpha_0 + \alpha_1\Delta \mathsf{ppi}_t + \alpha_2(\mathsf{cpi}_{t-1} - \beta_0 - \beta_1\mathsf{ppi}_{t-1}) + \varepsilon_t$$
+{r}
+model.ecm &lt;- lm(dcpi ~ dppi + lresid, data = ppi_cpi) </code></pre>
+<p>Let’s see the model summary: {r} summary(model.ecm)</p>
+<pre><code>
+The intercept is insignificant, hence we can remove it from the model:
+
+{r}
+model.ecm &lt;- lm(dcpi ~ dppi + lresid - 1,
+                # -1 denotes a model without a constant
+                data = ppi_cpi) </code></pre>
+<p>Let’s see the model summary again: {r} summary(model.ecm)</p>
+<pre><code>
+How would you interpret results of the model above?
+
+The parameter r summary(model.ecm)$coefficients[1, 1] %&gt;% round(3)` describes a short term relationship between `cpi` and `ppi`, so if `ppi` increases by 1 then the `cpi` in the **short run** will increase by r summary(model.ecm)$coefficients[1, 1] %&gt;% round(3)`.
+
+The long run relationship is described by the parameter -1.081 from the cointegrating relationship: so if `ppi` increases by 1 in the LONG RUN `cpi` will increase by -1.081.
+
+The value of r summary(model.ecm)$coefficients[2, 1] %&gt;% round(3)` is the estimate of the *adjustment coefficient*. As expected, its sign is negative and this value means that r -summary(model.ecm)$coefficients[2, 1] %&gt;% round(4)` of the unexpected error (increase in gap) will be corrected in the next period, so any unexpected deviation should be corrected finally on average within about r (1/(-summary(model.ecm)$coefficients[2, 1])) %&gt;% round(1)` periods.
+
+## 4 Granger causality test                                            
+
+Now let's check, whether `ppi` Granger causes `cpi` and vice versa. What is the proper lag length in this case? 
+
+Let's try with 3 lags. First, the `ppi` as the dependent variable:
+{r}
+grangertest(ppi ~ cpi,
+            data = ppi_cpi,
+            order = 3) # lag assumed</code></pre>
+<p>Is <code>cpi</code> a Granger cause of <code>ppi</code>?</p>
+<p>Next, the <code>cpi</code> as the dependent variable. {r} grangertest(cpi ~ ppi, data = ppi_cpi, order = 3) # lag assumed</p>
+<pre><code>Is `ppi` a Granger cause of `cpi`?
+
+In both cases the null about **NO CAUSALITY** is **rejected**, at least at the 95% confidence level.
+
+Now, let's repeat the analysis for 4 lags.
+{r}
+grangertest(ppi ~ cpi,
+            data = ppi_cpi,
+            order = 4) # lag assumed</code></pre>
+<p>Is <code>cpi</code> a Granger cause of <code>ppi</code>?</p>
+<p>{r} grangertest(cpi ~ ppi, data = ppi_cpi, order = 4) # lag assumed</p>
+<pre><code>Is `ppi` a Granger cause of `cpi`?
+
+Again, let's repeat the analysis for 5 lags:
+{r}
+grangertest(ppi ~ cpi,
+            data = ppi_cpi,
+            order = 5) # lag assumed</code></pre>
+<p>Is <code>cpi</code> a Granger cause of <code>ppi</code>?</p>
+<p>{r} grangertest(cpi ~ ppi, data = ppi_cpi, order = 5) # lag assumed ``<code>Is</code>ppi<code>a Granger cause of</code>cpi`?</p>
+<p>What is the conclusion?</p>
+<p>At 5% significance level (or 95% confidence level) we have so called <strong>bi-directional feedback</strong> in all cases.</p>
+<p>Now, we have to note, that the Granger causality analysis above is based on the <strong>non-stationary</strong> time series. If we wanted to remove risks of getting spurious regressions, we should rather use the <strong>differenced</strong> time series.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+<script src="TSA_2024_TOPIC_1_files/libs/quarto-html/zenscroll-min.js"></script>
+</body></html>
