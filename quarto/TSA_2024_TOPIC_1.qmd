@@ -1,12 +1,14 @@
 ---
-title: "Time Series 2024 Project Topic 1 (FORECASTING FINANCIAL INSTRUMENTS PRICES WITH VECM AND ARIMA MODELS)"
+title: "Time Series 2024 Project Topic 1"
+description: "Forecasting financial instruments prices with VECM and ARIMA models"
 author: "Anindita Basu & Vikram Bahadur"
 editor: visual
 date: "`r Sys.Date()`"
+engine: knitr
 format: 
   html:
     toc: true
-    toc-depth: 2
+    toc-depth: 3
     toc-location: left
     smooth-scroll: true
     toc-title: Contents
@@ -15,84 +17,108 @@ format:
     lot: true
     theme: spacelab
     highlight: tango
+    df-print: kable
     toc_float:
       collapsed: false
       smooth_scroll: true
 ---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo    = TRUE, 
                       cache   = FALSE, #https://yihui.org/knitr/options/#cache
                       message = FALSE, 
                       warning = FALSE)
 options(scipen = 10)
+library(knitr)
+
 ```
 
 ## 1 Importing the data
 
 First, let's load necessary libraries:
+
 ```{r cache = F}
 library(xts)
 library(lmtest)
 library(tidyverse)
+library(vars)
+library(quantmod)
+library(tseries)
+library(forecast)
+
 ```
 
 Let's also load the additional function:
+
 ```{r}
 source("../code/functions/testdf.R")
+source("../code/functions/utils.R")
+source("../code/functions/testdfModified.R")
 ```
 
-We will work with the Data concerning price indices:
-
-* CPI - Consumer Price Index for All Urban Consumers: Energy, 1982=100, https://fred.stlouisfed.org/series/CPIENGSL
-* PPI - Producer Price Index: Finished Energy Goods, 1982=100, https://fred.stlouisfed.org/series/WPSFD4121
-* Monthly data: 01.1986-02.2019
-* Source: U.S. Department of Labor, Bureau of Labor Statistics
-* Economic Data - FRED(R) II - http://research.stlouisfed.org/fred2/
+We will work with the Data concerning prices of financial instrument prices: y1, y2,y3,y4,y5,y6,y7,y8,y9,y10
 
 Now, we have to import the data:
+
 ```{r}
-TS <- read.csv("../data/TSA_2024_project_data_1.csv")
+# Start date 01/06/21
+# End date 27/03/22
+# total dataset 300 rows
+# Training set from 01/06/21 to 07/03/22, 280 rows 
+# Forecasting set from 08/03/22 to 27/03/22, 20 rows
+
+TS2 <- read.csv("../data/TSA_2024_project_data_1.csv")
 ```
 
 The structure of the data:
+
 ```{r}
-TS %>% glimpse()
-head(TS)
-tail(TS)
+TS2 %>% glimpse()
+head(TS2)
+tail(TS2)
 ```
 
 We have to correct the type of the `date` variable:
+
 ```{r}
-TS$date <- as.Date(TS$date, format = "%Y-%m-%d")
-TS %>% glimpse()
+TS2$date <- as.Date(TS2$date, format = "%Y-%m-%d")
+TS2 %>% glimpse()
 ```
 
 Let's also transform the `data.frame` into an `xts` object
-```{r}
-TS <- xts(TS[, -1], order.by = TS$date)
-```
-
-We will work the the `cpi` and `ppi` variables. Let's create their first differences.
-```{r}
-TS$dy1 <- diff.xts(TS$y1)
-TS$dy2 <- diff.xts(TS$y2)
-TS$dy3 <- diff.xts(TS$y3)
-TS$dy4 <- diff.xts(TS$y4)
-TS$dy5 <- diff.xts(TS$y5)
-TS$dy6 <- diff.xts(TS$y6)
-TS$dy7 <- diff.xts(TS$y7)
-TS$dy8 <- diff.xts(TS$y8)
-TS$dy9 <- diff.xts(TS$y9)
-TS$dy10 <- diff.xts(TS$y10)
-```
 
 ```{r}
-head(TS)
+TS2 <- xts(TS2[, -1], order.by = TS2$date)
+TS280 <- TS2[index(TS2) < as.Date("2022-03-08"), ]
+
+```
+
+We will work 10 variables of y1,y2, y3,y4.......y10. Let's create their first differences.
+
+```{r}
+TS280$dy1 <- diff.xts(TS280$y1)
+TS280$dy2 <- diff.xts(TS280$y2)
+TS280$dy3 <- diff.xts(TS280$y3)
+TS280$dy4 <- diff.xts(TS280$y4)
+TS280$dy5 <- diff.xts(TS280$y5)
+TS280$dy6 <- diff.xts(TS280$y6)
+TS280$dy7 <- diff.xts(TS280$y7)
+TS280$dy8 <- diff.xts(TS280$y8)
+TS280$dy9 <- diff.xts(TS280$y9)
+TS280$dy10 <- diff.xts(TS280$y10)
+```
+
+```{r}
+head(TS280)
 ```
 
 Next, we plot both variables on the graph:
+
 ```{r}
-plot(TS[, 1:10],
+#| fig-cap: "All price variables visualization."
+#| column: margin
+
+plot(TS280[, 1:10],
      col = c("black", "blue", "green", "yellow", "brown", "red", "orange", "khaki", "skyblue", "purple"),
      major.ticks = "years", 
      grid.ticks.on = "years",
@@ -101,235 +127,1164 @@ plot(TS[, 1:10],
      legend.loc = "topleft")
 
 ```
-Diff
+
+## 2 Finding the cointegrating pair
+
+### 2.1 Testing integration order
+
+In this step, we will perform ADF test on each variable and on its first difference. We found that all variables failed to reject null hypothesis (not stationary) but their first differences reject it and show \~ I(1)
+
+```{r echo=FALSE}
+Y <- c('y1', 'y2', 'y3', 'y4', 'y5', 'y6', 'y7', 'y8', 'y9', 'y10')
+dY <- c('dy1', 'dy2', 'dy3', 'dy4', 'dy5', 'dy6', 'dy7', 'dy8', 'dy9', 'dy10')
 ```
 
-
-plot(TS[, 11:20],
-
-     major.ticks = "months", 
-     grid.ticks.on = "days",
-
-     main = "...",
-     legend.loc = "..")
+```{r child="include_adf.qmd"}
 ```
 
-Alternatively, using the `ggplot2` package:
+### 2.2 Finding cointegrated pair
+
+We are following Engle Granger's two steps method (All time series are integrated of the same order from previous step) + Step 1: Estimation of the cointegrating vector using standard OLS regression **yt = β0 + β1xt + ut** + Step 2: Testing whether residuals ut obtained in previous step are stationary
+
+```{r echo=FALSE}
+selected_models <- data.frame(pair=NULL, p_adf=NULL, aic=NULL, bic=NULL)
+df_res <- data.frame(pair=NULL, p_adf=NULL, result=NULL, cointegration_vector=NULL)
+cointvec <- "NULL"
+for (i in 1:9) {
+  for (j in (i + 1):10) {
+    #print(paste("(y=",i,",y=",j,")"))
+    model.coint <- lm(formula = paste(Y[i], "~", Y[j]), data = TS280)
+    redf <- testdfModified(variable = residuals(model.coint), max.augmentations = 3)
+    #print(redf)
+    if (redf$p_adf[1] < .05) {
+      result <- "Conintegrated"
+      cointvec = paste("[1,",unname(coef(model.coint))[1], ",",unname(coef(model.coint))[2],"]")
+      selected_models <- rbind(selected_models, data.frame(pair=paste("(y=",i,",y=",j,")"), p_adf=redf$p_adf[1], aic=AIC(model.coint), bic=BIC(model.coint)))
+    } else {
+      result <- "Not Conintegrated"
+      cointvec <- ""
+    }
+    new_row <- data.frame(pair=paste("(y=",i,",y=",j,")"), p_adf=redf$p_adf[1], result=result, cointegration_vector=cointvec)
+    df_res <- rbind(df_res, new_row)
+    }
+}
+
+# collect all the cointegrating paris and how which is most significant
+```
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+df_res
+```
+:::
+
+List of cointegrating pairs we found are
+
+```{r echo=FALSE}
+selected_models
+```
+
+We selected y4,y8 to move forward
+
+```{r echo=FALSE}
+plot(TS280[,c(4,8)],
+     col = c("green", "red")
+
+    )
+```
+
+### 2.3. Let's examine the selected model summary:
+
 ```{r}
-
-```
-
-
-## 2 Testing cointegration
-
-In the next step, we will perform the tests of integration order.
-
-First, let's apply the ADF test for the `cpi` variable and its first differences.
-```{r}
-testdf(variable = TS$y1,
-       max.augmentations = 3)
-testdf(variable = TS$dy1, 
-       max.augmentations = 3)
-```
-
-Since we can reject the null in the case of the first differences, we can conclude that the y1 is from I(1). 
-
-
-```{r}
-testdf(variable = TS$y2,
-       max.augmentations = 3)
-testdf(variable = TS$dy2, 
-       max.augmentations = 3)
-
-```
-```{r}
-testdf(variable = TS$y3,
-       max.augmentations = 3)
-testdf(variable = TS$dy3, 
-       max.augmentations = 3)
-```
-```{r}
-testdf(variable = TS$y4,
-       max.augmentations = 3)
-testdf(variable = TS$dy4, 
-       max.augmentations = 3)
-```
-```{r}
-testdf(variable = TS$y5,
-       max.augmentations = 3)
-testdf(variable = TS$dy5, 
-       max.augmentations = 3)
-```
-```{r}
-testdf(variable = TS$y6,
-       max.augmentations = 3)
-testdf(variable = TS$dy6, 
-       max.augmentations = 3)
-```
-```{r}
-testdf(variable = TS$y7,
-       max.augmentations = 3)
-testdf(variable = TS$dy7, 
-       max.augmentations = 3)
-```
-```{r}
-testdf(variable = TS$y8,
-       max.augmentations = 3)
-testdf(variable = TS$dy8, 
-       max.augmentations = 3)
-```
-```{r}
-testdf(variable = TS$y9,
-       max.augmentations = 3)
-testdf(variable = TS$dy9, 
-       max.augmentations = 3)
-```
-```{r}
-testdf(variable = TS$y10,
-       max.augmentations = 3)
-testdf(variable = TS$dy10, 
-       max.augmentations = 3)
-```
-Since we can reject the null in the case of the first differences, we can conclude that the yi is from I(1) (i=1,2,3.....)
-
-
-Again, we can conclude that the `ppi` is integrated of order 1, as we can reject the null in the case of the first differences. 
-
-As a result, both variables are $\sim I(1)$, so in the next step we can check whether they are **cointegrated**.
-
-To estimating the cointegrating vector, we will estimate the following model:
-```{r}
-model.coint <- lm(y2 ~ y7, data = TS)
-```
-
-Let's examine the model summary:
-```{r}
+model.coint <- lm(y4 ~ y8, data = TS280)
 summary(model.coint)
 ```
 
-Next, we have to test stationarity of residuals. What is the proper ADF statistic? 
-```{r}
-testdf(variable = residuals(model.coint), max.augmentations = 3)
+We can observe that **y8** has high significance on standard OLS regression model of Engle Granger's method and if **y8** increases by 1 unit **y4** increases by 0.500849 units in the long run.
+
+Next, we have to test stationarity of residuals. We found that the residuals of the model(y4-y8) is white noise as null hypothesis is rejected.
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+
+df_var <- testdf(variable = residuals(model.coint), max.augmentations = 3, varname = "residuals")
+df_var
+plot(residuals(model.coint), type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable","residuals"))
+```
+:::
+
+The ADF test with no augmentations can be used its result is that non-stationarity of residuals is **STRONGLY REJECTED**, so residuals are **stationary**, which means that `y4` and `y8` are **cointegrated**.
+
+```{r echo=FALSE}
+#TS280 <- TS2[index(TS2) < as.Date("2022-03-08"), ]
+#tail(TS280)
 ```
 
-What is the result of cointegration test? What is the cointegrating vector? 
+## 3 Estimating VECM
 
-The ADF test with no augmentations can be used its result is that non-stationarity of residuals is **STRONGLY REJECTED**, so residuals are **stationary**, which means that `ppi` and `cpi` are **cointegrated**.
+### 3.1 Johansen cointegration test
 
-The cointegrating vector is [1, `r -summary(model.coint)$coefficients[1, 1] %>% round(3)` , `r -summary(model.coint)$coefficients[2, 1] %>% round(3)`]
+We have already performed a univariate cointegration test of Engle and Granger. Our conclusions are that `y4` and `y8` variables are cointegrated of order \~CI(1,1).
 
-which defines the cointegrating relationship as: 1 * cpi - `r summary(model.coint)$coefficients[1, 1] %>% round(3)` - `r summary(model.coint)$coefficients[2, 1] %>% round(3)` * ppi,
+As an alternative, we will now perform a multivariate test of Johansen. We will assume the `K=6` lag structure.
 
-Now, let's create first lags of residuals and adding them to the dataset
+```         
+     Johansen Trace test
+```
 
 ```{r}
-Y <- c('y1', 'y2', 'y3', 'y4', 'y5', 'y6', 'y7', 'y8', 'y9', 'y10')
+johan.test.trace <- 
+  ca.jo(TS280[, c("y4", "y8")], # data 
+        ecdet = "const", # "none" for no intercept in cointegrating equation, 
+        # "const" for constant term in cointegrating equation and 
+        # "trend" for trend variable in cointegrating equation
+        type = "trace",  # type of the test: trace or eigen
+        K = 6,           # lag order of the series (levels) in the VAR
+    ) 
+summary(johan.test.trace) 
+```
 
-for (i in 1:9) {
-  for (j in (i + 1):10) {
-    model.coint <- lm(formula = paste(Y[i], "~", Y[j]), data = TS)
-    testdf(variable = residuals(model.coint), max.augmentations = 3)
+Let's find interpretation of the test results:
+
+```{r }
+cbind(summary(johan.test.trace)@teststat, summary(johan.test.trace)@cval)
+```
+
+Let's recall that if the test statistic is SMALLER than the critical value, we CANNOT reject the null. If the test statistic is LARGER than the critical value, we REJECT the null.
+
+We start with testing the hypothesis that **r = 0**. The testing statistic is greater than the critical value, hence the null is rejected (at 5% level).
+
+Next, we test that **r \<= 1**. In this case, the testing statistic is lower that the critical value, hence the null is NOT rejected.
+
+We can say there is 1 cointegrating vector for pair y4 and y8
+
+4 b. It is the first eigenvector (the first column):
+
+```{r}
+summary(johan.test.trace)@V
+```
+
+Weights W:
+
+```{r}
+summary(johan.test.trace)@W
+```
+
+Let's apply the alternative variant of the test: Maximal Eigen Value Test
+
+```{r}
+johan.test.eigen <- 
+  ca.jo(TS280[, c("y4", "y8")], # data 
+        ecdet = "const", # "none" for no intercept in cointegrating equation, 
+        # "const" for constant term in cointegrating equation and 
+        # "trend" for trend variable in cointegrating equation
+        type = "eigen",  # type of the test: trace or eigen
+        K = 6,           # lag order of the series (levels) in the VAR
+) 
+summary(johan.test.eigen) 
+```
+
+The conclusions are the same: 1 cointegrating vector same as Trace test. The variant of the Johansen test does not have impact on the parameters of cointegrating vector.
+
+### 3.2 The VECM model
+
+The Trace and Maximal Eigen Value give the same cointegrating vector, so any of the two can be used to estimate VECM.
+
+Estimation of VECM Model
+
+```{r}
+TS280.vec4 <- cajorls(johan.test.eigen, # defined specification
+                        r = 1) # number of cointegrating vectors
+```
+
+```{r}
+TS280.vec4 %>% head(3)
+```
+
+```{r}
+summary(TS280.vec4)
+```
+
+To print results we may refer to the element called `$rlm` and produce its summary with significance tests.
+
+```{r}
+str(TS280.vec4)
+```
+
+```{r}
+summary(TS280.vec4$rlm)
+```
+
+### 3.3 Interpreting all the parameters of the VECM model,
+
+This is the F-test for y4 on y8 for joint significance test where null hypothesis is given below $$H_0 : \alpha_{11}=\gamma_{11}=\gamma_{12} =\gamma_{13}=\gamma_{14}=\gamma_{15}=0 $$ ##The p-value for joint significance test is less than 0.05. Hence the null hypothesis is rejected and the parameters/coefficients are jointly significant. ##We can observe that p-values of each parameters/coefficients are less than 0.05 and hence each parameters has high significance for y4 on y8. $$H_0 : \alpha_{11}=0 $$ ##Here the p-value is less than 0.05 and the coefficient of ect1 is non-zero and hence it is highly significant and thus the error correction mechanism exists.
+
+### 3.4 Commenting about the signs of the estimated parameters,
+
+The sign of the estimated coefficient/ parameter of ect1 is negative for y4 on y8
+
+This is the F-test for y8 on y4 for joint significance test where null hypothesis is given below $$H_0 : \alpha_{22}=\gamma_{21}=\gamma_{22} =\gamma_{23}=\gamma_{24}=\gamma_{25}=0 $$ ##The p-value for joint significance test is less than 0.05. Hence the null hypothesis is rejected and the parameters/coefficients are jointly significant.
+
+We can observe that p-values of each parameters/coefficients are not less than 0.05 individually and hence each parameters is not significant for y8 on y4.
+
+### 3.5 Commenting if the Error Correction Mechanism work
+
+$$H_0 : \alpha_{21}=0 $$ ##Here the p-value is less than 0.1 and the coefficient is not zero and significant at 10% level and the error correction mechanism exists. ##The sign of the coefficient of ect1 is expected to be positive but comes as negative for y8 on y4.
+
+The VECM model is given by where p= 5 for VECM:
+
+$$\Delta\boldsymbol{y}_t = \Pi\boldsymbol{y}_{t-1} + \Gamma_1\Delta\boldsymbol{y}_{t-1} + ... + \Gamma_5\Delta\boldsymbol{y}_{t-5} + \boldsymbol{\varepsilon}_t$$
+
+The `ect1` elements in both equations contain the adjustment coefficients ($\alpha_{11}$ and $\alpha_{21}$), which are the result of the decomposition of the $\Pi$ matrix:
+
+$$
+\boldsymbol{\Pi}=\alpha\beta'=\left[
+    \begin{array}{ccc}
+    \alpha_{11} \\
+    \alpha_{21} \\
+    \end{array} 
+\right]
+\left[
+    \begin{array}{cccc}
+\beta_{11} \quad \beta_{21} \\
+ \end{array}
+\right]
+$$
+
+We can extract the cointegrating vector in the following way:
+
+```{r}
+TS280.vec4$beta
+```
+
+### 3.6 We can reparametrize the VEC model into VAR model:
+
+```{r}
+TS280.vec4.asVAR <- vec2var(johan.test.eigen, r = 1)
+```
+
+Lets see the result:
+
+```{r}
+TS280.vec4.asVAR
+```
+
+### 3.7 Based on the reparametrized model, we can calculate and plot Impulse Response Functions:
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+ plot(irf(TS280.vec4.asVAR, n.ahead = 20))
+```
+:::
+
+We can observe the shock from y4 impact on all variables and after 20 time periods the response of the shock disappears and shock from y8 or from y4 has more impact on y4
+
+### 3.8 We can also perform for the Forecast Error Variance Decomposition:
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+  plot(fevd(TS280.vec4.asVAR, n.ahead = 20))
+```
+:::
+
+We can observe that the variance of forecast errors of y4 can be explained by the shocks to each explanatory varibles y4 and y8 for the time ahead as s= 19 .
+
+### 3.9 We check if model residuals are autocorrelated.
+
+Residuals can be extracted from the VAR reparametrized model.
+
+```{r}
+tail(residuals(TS280.vec4.asVAR))
+serial.test(TS280.vec4.asVAR)
+```
+
+Null hypothesis is the residuals of the VAR model are no autocorrelated and the p-value is greater than 0.05 and 0.1 The null is failed to be rejected and thus there is no autocorrelation of residuals of y4 and y8 of the VAR model(6) We have taken lag p=6 for VAR becuase for p\<6 the residuals of y4 and y8 are autocorrelated.
+
+### 3.10 You can see the ACF and PACF functions by plotting the results of the `serial.test()`
+
+::: {.layout-example .column-page-right .left}
+```{r, out.height="100%", out.width="100%"}
+plot(serial.test(TS280.vec4.asVAR))
+```
+:::
+
+### 3.11 Histograms of residuals for the VAR Model test 13
+
+```{r}
+#| column: margin
+
+TS280.vec4.asVAR %>%
+  residuals() %>%
+  as_tibble() %>%
+  ggplot(aes(`resids of y8`)) +
+  geom_histogram(aes(y =..density..),
+                 colour = "red", 
+                 fill = "green") +
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(residuals(TS280.vec4.asVAR)[, 1]), 
+                            sd = sd(residuals(TS280.vec4.asVAR)[, 1]))) +
+  theme_bw() + 
+  labs(
+    title = "Density of y8 residuals", 
+    y = "", x = "",
+    caption = "source: own calculations"
+  )
+```
+
+```{r}
+#| column: margin
+
+TS280.vec4.asVAR %>%
+  residuals() %>%
+  as_tibble() %>%
+  ggplot(aes(`resids of y4`)) +
+  geom_histogram(aes(y =..density..),
+                 colour = "blue", 
+                 fill = "pink") +
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(residuals(TS280.vec4.asVAR)[, 2]), 
+                            sd = sd(residuals(TS280.vec4.asVAR)[, 2]))) +
+  theme_bw() + 
+  labs(
+    title = "Density of y4 residuals", 
+    y = "", x = "",
+    caption = "source: own calculations"
+  )
+```
+
+### 3.12 We have checked normality of residuals by applying the Jarque-Bera (JB) test.
+
+```{r}
+normality.test(TS280.vec4.asVAR)
+```
+
+P-value for JB normality test is greater than 0.05 and hence the null about normality is failed to be rejected and the residuals are normally distributed ##There is no skewness as the null hypothesis about no skewness is failed to be rejected and same as for the Kurtosis. ##Hence the residuals for VAR model(6) are normally distributed
+
+### 3.13 Forecasting based on the VECM
+
+Now we will calculate 20 days forecasts for y4 and y8\` variables.
+
+Forecasting the model based on VECM
+
+```{r}
+TS.vec4.fore <- 
+  predict(
+    vec2var(
+      johan.test.eigen, 
+      r = 1),     # no of cointegrating vectors 
+    n.ahead = 20, # forecast horizon
+    ci = 0.95)    # confidence level for intervals
+```
+
+VEC forecasts for `y4`:
+
+```{r}
+TS.vec4.fore$fcst$y4
+```
+
+VEC forecasts for `y8`:
+
+```{r}
+TS.vec4.fore$fcst$y8
+```
+
+```{r}
+tail(index(TS2), 20)
+y4_forecast <- xts(TS.vec4.fore$fcst$y4[,-4], 
+                    # we exclude the last column with CI
+                    tail(index(TS2), 20))
+```
+
+For y4 forecast:
+
+```{r}
+names(y4_forecast) <- c("y4_fore", "y4_lower", "y4_upper")
+```
+
+For `y8` forecasts:
+
+```{r}
+y8_forecast <- xts(TS.vec4.fore$fcst$y8[, -4],
+                    # we exclude the last column with CI
+                    tail(index(TS2), 20))
+names(y8_forecast) <- c("y8_fore", "y8_lower", "y8_upper")
+```
+
+Now, we can merge the data together:
+
+```{r}
+TS <- merge(TS2, 
+                 y4_forecast,
+                 y8_forecast)
+```
+
+Lets compare the forecasted and real data on the plot.
+
+```{r}
+#| layout-ncol: 2 
+plot(TS[index(TS) > as.Date("2022-03-07"), c("y4", "y4_fore",
+                        "y4_lower", "y4_upper")], 
+  
+     main = "20 days forecast of energy y4",
+     col = c("black", "blue", "red", "red"))
+
+plot(TS[index(TS) > as.Date("2022-03-07"), c("y8", "y8_fore",
+                        "y8_lower", "y8_upper")], 
+
+     main = "20 days forecast of energy y8",
+     col = c("black", "blue", "red", "red"))
+```
+
+Here we get the forecasting price of y8 and y4 on 20 time periods and the original and projected observation are lying within the upper and lower boundaries. HERE the blue represents the projected/forecast and the blue represents the original observation.
+
+We have Calculated forecast accuracy measures (MAE, MSE, MAPE, AMAPE) based on VECM model and compared it with the accuracy of the forecast based on VECM model
+
+```{r}
+errors_matrix <- data.frame()
+errors_matrix <- calculate_errors(errors_matrix, TS$y4, TS$y4_fore,"y4_vecm")
+errors_matrix <- calculate_errors(errors_matrix, TS$y8, TS$y8_fore, "y8_vecm")
+```
+
+```{r}
+errors_matrix[c("y4_vecm", "y8_vecm"),]
+```
+
+### 3.14 Interpretation of Errors:
+
+-   **MAE for y4**: 0.986
+    -   On average, the absolute error in predictions for `y4` is 0.986 units. This indicates the typical size of the error in your predictions.
+-   **MSE for y4**: 1.399
+    -   The mean squared error for `y4` is 1.399. This value is higher than the MAE, suggesting that there are some larger errors that are being squared, thus increasing the overall error value.
+-   **MAPE for y4**: 0.0056 (or 0.56%)
+    -   The mean absolute percentage error for `y4` is 0.56%. This indicates that, on average, the predictions for `y4` deviate from the actual values by 0.56% of the actual values.
+-   **AMAPE for y4**: 0.0028 (or 0.28%)
+    -   The adjusted mean absolute percentage error for `y4` is 0.28%. This metric provides a different perspective on the error, accounting for the scale of the actual and predicted values.
+-   **MAE for y8**: 1.938
+    -   On average, the absolute error in predictions for `y8` is 1.938 units, which is significantly higher than that for `y4`.
+-   **MSE for y8**: 5.230
+    -   The mean squared error for `y8` is 5.230. This is much higher than the MSE for `y4`, suggesting the presence of larger errors in the predictions for `y8`.
+-   **MAPE for y8**: 0.0131 (or 1.31%)
+    -   The mean absolute percentage error for `y8` is 1.31%. This indicates that, on average, the predictions for `y8` deviate from the actual values by 1.31% of the actual values.
+-   **AMAPE for y8**: 0.0066 (or 0.66%)
+    -   The adjusted mean absolute percentage error for `y8` is 0.66%. Again, this provides a sense of the prediction error relative to the combined scale of actual and predicted values.
+-   The errors for `y4` are generally lower than those for `y8`, indicating better prediction accuracy for `y4`.
+-   Both MSE and MAE are higher for `y8` than for `y4`, with the difference in MSE being particularly pronounced, suggesting that the predictions for `y8` have larger errors.
+-   The MAPE and AMAPE for `y4` are significantly lower than for `y8`, indicating more accurate percentage-based predictions for `y4`.
+
+Overall, these metrics suggest that the model's predictions for `y4` are more accurate and consistent than those for `y8`.
+
+## 4 ARIMA Modeling for y4
+
+We will apply Box-Jenkins procedure following below steps  
+
+### 4.1 step 1: Identification
+
+Plotting actual prices **y4**
+
+```{r}
+#| column: margin
+
+tibble(df = TS280$y4) %>%
+  ggplot(aes(zoo::index(TS280), df)) +
+  geom_line() +
+  scale_x_date(date_breaks = "1 year", date_labels = "%b-%Y")+
+  labs(
+    title = "Actual Y4 Price",
+    subtitle = paste0("Number of observations: ", length(TS280$y4)),
+    caption = "source: TSA 2024",
+    x="",
+    y=""
+  )
+```
+
+Plotting log transformed **y4** prices
+
+```{r}
+#| column: margin
+
+y4_log <- log(TS280$y4)
+y4_log_return <- periodReturn(y4_log, period="daily", type="log")
+
+## Plotting Log Transformed y4 Price
+tibble(df2 = y4_log) %>%
+  ggplot(aes(zoo::index(TS280), df2)) +
+  geom_line() +
+scale_x_date(date_breaks = "1 year", date_labels = "%b-%Y")+
+  labs(
+    title = "Log Transformed y4 Price",
+    subtitle = paste0("Number of observations: ", length(TS280$y4)),
+    caption = "source: TSA 2024",
+    x="",
+    y=""
+  )
+```
+
+Plotting return of log transferred **y4** prices
+
+```{r}
+#| column: margin
+tibble(df3 = y4_log_return) %>%
+  ggplot(aes(zoo::index(TS280), df3)) +
+  geom_line() +
+scale_x_date(date_breaks = "1 year", date_labels = "%b-%Y")+
+  labs(
+    title = "Log Transformed y4 return",
+    subtitle = paste0("Number of observations: ", length(TS280$y4)),
+    caption = "source: TSA 2024",
+    x="",
+    y=""
+  )
+```
+
+```{r echo=FALSE}
+#Table 1. Stationary test of data start here
+
+adf.y4 <- adf.test(TS280$y4)
+pp.y4 <- pp.test(TS280$y4)
+bg.y4 <- bgtest(adfTest(TS280$y4, lags = 0, type = "c")@test$lm$residuals~1, order = 1)
+
+results_y4 <- data.frame()
+results_y4 <- stationary_test_data(results_y4, "y4", "01/06/2021~07/03/2022", adf.y4, pp.y4, bg.y4)
+
+adf.y4_log <- adf.test(y4_log)  
+pp.y4_log <- pp.test(y4_log)  
+bg.y4_log <- bgtest(adfTest(y4_log, lags = 0, type = "c")@test$lm$residuals~1, order = 1)
+
+results_y4 <- stationary_test_data(results_y4, "y4 log", "01/06/2021~07/03/2022", adf.y4_log, pp.y4_log, bg.y4_log)
+
+adf.y4_log_return <- adf.test(y4_log_return)  
+pp.y4_log_return <- pp.test(y4_log_return)  
+bg.y4_log_return <- bgtest(adfTest(y4_log_return, lags = 0, type = "c")@test$lm$residuals~1, order = 1)
+
+results_y4 <- stationary_test_data(results_y4, "y4 log return", "01/06/2021~07/03/2033", adf.y4_log_return, pp.y4_log_return, bg.y4_log_return)
+
+```
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+results_y4
+```
+:::
+
+Result shows **y4 log return** is stationary
+
+Plotting ACF and PACF for **y4 log return**
+
+::: {.layout-example .column-page-right .left}
+```{r, out.width="100%"}
+#| layout-ncol: 2
+plot_acf_pacf(y4_log_return)
+```
+:::
+
+ACF and PACF suggest initially 4 lags MA and 0 lag AR process.
+
+### 4.2 step 2 & 3: Estimation and Diagnostics
+
+We will take all the possible combination of ARIMA having AR order p from 0 to 4 and MA q also from 0 to 4. It will help to see possible models with respective AIC and BIC.
+
+```{r}
+y4_models_detail <- data.frame()
+for (p in 0:4) {
+  for (q in 0:4) {
+    if(! (p==0 & q==0)){
+    cur_model <- Arima(y4_log_return, order=c(p,1,q))
+    y4_models_detail <- model_summary(y4_models_detail, paste("c(",p,",1,",q,")",sep=""), cur_model)
+  }
   }
 }
 ```
 
-``{r}
-ppi_cpi$lresid <- lag.xts(residuals(model.coint))
+::: {.layout-example .column-page-right .left}
+```{r}
+y4_models_detail
+```
+:::
+
+Find the model with the minimum AIC value
+```{r}
+y4_aic_ind <- which.min(y4_models_detail$AIC_Value)
+min_row <- y4_models_detail[y4_aic_ind, ]
 ```
 
-## 3 Estimating ECM
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+min_row
+```
+:::
 
-We are ready to estimate the ECM model, which is described by the following functional form:
-
-$$\Delta \mathsf{cpi}_t = \alpha_0 + \alpha_1\Delta \mathsf{ppi}_t + \alpha_2(\mathsf{cpi}_{t-1} - \beta_0 - \beta_1\mathsf{ppi}_{t-1}) + \varepsilon_t$$
-{r}
-model.ecm <- lm(dcpi ~ dppi + lresid, data = ppi_cpi) 
+Find the model with the minimum BIC value
+```{r}
+y4_bic_ind <- which.min(y4_models_detail$BIC_Value)
+min_row <- y4_models_detail[y4_bic_ind, ]
 ```
 
-Let's see the model summary:
-{r}
-summary(model.ecm)
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+min_row
+```
+:::
+
+
+Analyzing  **ARIMA(2,1,3)** for y4 log return series
+
+```{r echo=FALSE}
+y4_model_213 <- Arima(y4_log_return, order=c(2,1,3))
+# Diagnostics
+y4_residuals_213 = resid(y4_model_213)
+```
+Plotting ACF and PACF of y4 log return residuals
+
+::: {.layout-example .column-page-right .left}
+```{r, out.width="100%"}
+#| layout-ncol: 2
+#plot acf and pacf for residuals
+plot_acf_pacf(y4_residuals_213)
+```
+:::
+
+ACF plot at certain lags like 4, 6 and 10 etc indicate that the residuals are correlated at those lags, suggesting the presence of autocorrelation.
+
+PACF plot indicate that there is a direct correlation between the residuals at specific lags like 3, 4, and 5 etc, after removing the influence of the previous lags.
+
+Performing ADF/BG test for y4 log returns residuals
+
+```{r echo=FALSE}
+y4_residuals_acf_test_213 <- data.frame()
+adf.y4_residuals_213 <- adf.test(y4_residuals_213)  
+pp.y4_residuals_213 <- pp.test(y4_residuals_213)
+bg.y4_residuals_213 <- bgtest(adfTest(y4_residuals_213, lags = 0, type = "c")@test$lm$residuals~1, order = 1)
+
+y4_residuals_acf_test_213 <- stationary_test_data(y4_residuals_acf_test_213, "Model (2,1,3) residuals", "01/01/2012~14/05/2013", adf.y4_residuals_213, pp.y4_residuals_213, bg.y4_residuals_213)
 ```
 
-The intercept is insignificant, hence we can remove it from the model:
+::: {.layout-example .column-page-right .left}
+```{r}
+y4_residuals_acf_test_213
+```
+:::
 
-{r}
-model.ecm <- lm(dcpi ~ dppi + lresid - 1,
-                # -1 denotes a model without a constant
-                data = ppi_cpi) 
+
+All above test (ADF,PP and BG) suggest there is no significant autocorrelation in residuals.
+
+Performing Ljung-Box test for autocorrelation in residuals
+
+```{r}
+# Ljung-Box test for autocorrelation in residuals
+Box.test(y4_residuals_213, type = "Ljung-Box", lag = 10)
+
+coeftest(y4_model_213)
 ```
 
-Let's see the model summary again:
-{r}
-summary(model.ecm)
+It shows all the parameters are significant and for 10 lags Ljung-Box p-value \< .05 suggests there is significant autocorrelation in residuals.
+
+Analyzing next suggested model **ARIMA(4,1,3)**
+
+```{r echo=FALSE}
+y4_model_413 <- Arima(y4_log_return, order=c(4,1,3))
+
+# Diagnostics
+y4_residuals_413 = resid(y4_model_413)
 ```
 
-How would you interpret results of the model above?
+Plotting ACF and PACF of y4 log return residuals
 
-The parameter r summary(model.ecm)$coefficients[1, 1] %>% round(3)` describes a short term relationship between `cpi` and `ppi`, so if `ppi` increases by 1 then the `cpi` in the **short run** will increase by r summary(model.ecm)$coefficients[1, 1] %>% round(3)`.
-
-The long run relationship is described by the parameter `r summary(model.coint)$coefficients[2, 1] %>% round(3)` from the cointegrating relationship: so if `ppi` increases by 1 in the LONG RUN `cpi` will increase by `r summary(model.coint)$coefficients[2, 1] %>% round(3)`.
-
-The value of r summary(model.ecm)$coefficients[2, 1] %>% round(3)` is the estimate of the *adjustment coefficient*. As expected, its sign is negative and this value means that r -summary(model.ecm)$coefficients[2, 1] %>% round(4)` of the unexpected error (increase in gap) will be corrected in the next period, so any unexpected deviation should be corrected finally on average within about r (1/(-summary(model.ecm)$coefficients[2, 1])) %>% round(1)` periods.
-
-## 4 Granger causality test                                            
-
-Now let's check, whether `ppi` Granger causes `cpi` and vice versa. What is the proper lag length in this case? 
-
-Let's try with 3 lags. First, the `ppi` as the dependent variable:
-{r}
-grangertest(ppi ~ cpi,
-            data = ppi_cpi,
-            order = 3) # lag assumed
+::: {.layout-example .column-page-right .left}
+```{r, out.width="100%"}
+#| layout-ncol: 2
+#plot acf and pacf for residuals
+plot_acf_pacf(y4_residuals_413)
 ```
-Is `cpi` a Granger cause of `ppi`?
+:::
 
-Next, the `cpi` as the dependent variable.
-{r}
-grangertest(cpi ~ ppi,
-            data = ppi_cpi,
-            order = 3) # lag assumed
+ACF looks much better but still few lag shows autocorrelation in residuals.
+
+PACF looks almost same and high direct correlation in residuals.
+
+Performing ADF,PP and BG test
+
+```{r echo=FALSE}
+y4_residuals_acf_test_413 <- data.frame()
+adf.y4_residuals_413 <- adf.test(y4_residuals_413)  
+pp.y4_residuals_413 <- pp.test(y4_residuals_413)  
+bg.y4_residuals_413 <- bgtest(adfTest(y4_residuals_413, lags = 0, type = "c")@test$lm$residuals~1, order = 1)
+
+y4_residuals_acf_test_413 <- stationary_test_data(y4_residuals_acf_test_413, "Log transformed data", "01/01/2012~14/05/2013", adf.y4_residuals_413, pp.y4_residuals_413, bg.y4_residuals_413)
+
 ```
-Is `ppi` a Granger cause of `cpi`?
 
-In both cases the null about **NO CAUSALITY** is **rejected**, at least at the 95% confidence level.
-
-Now, let's repeat the analysis for 4 lags.
-{r}
-grangertest(ppi ~ cpi,
-            data = ppi_cpi,
-            order = 4) # lag assumed
+::: {.layout-example .column-page-right .left}
+```{r}
+y4_residuals_acf_test_413
 ```
-Is `cpi` a Granger cause of `ppi`?
+:::
 
-{r}
-grangertest(cpi ~ ppi,
-            data = ppi_cpi,
-            order = 4) # lag assumed
+All above test (ADF,PP and BG) suggest there is no significant autocorrelation in residuals.
+
+Performing \# Ljung-Box test for autocorrelation in residuals
+
+```{r}
+# Ljung-Box test for autocorrelation in residuals
+# as https://robjhyndman.com/hyndsight/ljung-box-test/ suitable value for lag is 10
+Box.test(y4_residuals_413, type = "Ljung-Box", lag = 10)
+
+coeftest(y4_model_413)
 ```
-Is `ppi` a Granger cause of `cpi`?
 
-Again, let's repeat the analysis for 5 lags:
-{r}
-grangertest(ppi ~ cpi,
-            data = ppi_cpi,
-            order = 5) # lag assumed
+It shows not all parameters are significant and for 10 lags Ljung-Box p-value \>.05 suggests there is no significant autocorrelation in residuals.
+
+As ar1, ar2 and ar3 are not significant and ma2 as well, we can remove them from model
+
+Plotting ACF/PACF after adusting the model
+
+```{r}
+y4_model_413_modified <- Arima(y4_log_return, order=c(4,1,3),
+                      fixed = c(0, 0, 0, NA, NA,0, NA))
+
+y4_residuals_413_modified = resid(y4_model_413_modified)
 ```
-Is `cpi` a Granger cause of `ppi`?
 
-{r}
-grangertest(cpi ~ ppi,
-            data = ppi_cpi,
-            order = 5) # lag assumed
+::: {.layout-example .column-page-right .left}
+```{r, out.width="100%"}
+#| layout-ncol: 2
+#plot acf and pacf for residuals
+plot_acf_pacf(y4_residuals_413_modified)
 ```
-Is `ppi` a Granger cause of `cpi`?
+:::
 
-What is the conclusion? 
+Here we can see no improvement on both graphs
 
-At 5% significance level (or 95% confidence level) we have so called **bi-directional feedback** in all cases. 
+Performing \# Ljung-Box test for autocorrelation in residuals for adjusted model
 
-Now, we have to note, that the Granger causality analysis above is based on the **non-stationary** time series. If we wanted to remove risks of getting spurious regressions, we should rather use the **differenced** time series. 
+```{r}
+Box.test(y4_residuals_413_modified, type = "Ljung-Box", lag = 10)
+coeftest(y4_model_413_modified)
+# Ljung-Box p value is 0.04991 < .05 reject the null hypothesis that residuals are non auto
+# correlated, earlier model shows p value 0.2033 > .05 failed to reject the null hypothesis therefore 
+# residuals are white noise and model 413 is best accepted model
+```
+
+p-value \< .05 suggest there is significant autocorrelation in residuals.
+
+So out of discussed three models we confirmed to select ARIMA(4,1,3) (unmodified one)
+
+### 4.3 Forecasting Results
+
+We are forecasting 20 days ahead
+
+```{r}
+y4_model_413.forecast <- forecast(y4_model_413, h = 20)
+```
+
+Converting log returned forecast to predicted prices
+
+::: {.layout-example .column-page-right .left}
+```{r}
+last_observed_price <- tail(TS280$y4,1) 
+# Convert log returns to actual price forecasts
+forecasted_prices <- numeric(length(y4_model_413.forecast$mean))
+forecasted_prices[1] <- last_observed_price * exp(y4_model_413.forecast$mean[1])
+
+for (i in 2:length(forecasted_prices)) {
+  forecasted_prices[i] <- forecasted_prices[i-1] * exp(y4_model_413.forecast$mean[i])
+}
+
+y4_arima_forecast <- xts(forecasted_prices, tail(index(TS2), 20))
+
+names(y4_arima_forecast) <- c("y4_arima_forecast")
+
+TS <- merge(TS,y4_arima_forecast)
+```
+:::
+
+```{r}
+plot(TS[index(TS) > as.Date("2022-02-28"), c("y4", "y4_arima_forecast")], 
+  main = "20 days forecast of y4 prices via ARIMA",
+  col = c("black", "blue"))
+
+```
+
+### 4.4 Forecasting Errors
+By usint the utility function from util.R, we are calculating forecasting errors
+```{r}
+errors_matrix <- calculate_errors(errors_matrix, TS$y4, TS$y4_arima_forecast,"y4_arima")
+errors_matrix["y4_arima",]
+```
+
+## 5 ARIMA Modeling for y8
+
+We will apply Box-Jenkins procedure following below steps 
+
+### 5.1 step 1: Identification 
+
+Plotting actual prices **y8**
+
+```{r}
+#| column: margin
+tibble(df = TS280$y8) %>%
+  ggplot(aes(zoo::index(TS280), df)) +
+  geom_line() +
+  scale_x_date(date_breaks = "1 year", date_labels = "%b-%Y")+
+  labs(
+    title = "Actual y8 Price",
+    subtitle = paste0("Number of observations: ", length(TS280$y8)),
+    caption = "source: TSA 2024",
+    x="",
+    y=""
+  )
+```
+
+Plotting log transformed **y8** prices
+
+```{r}
+#| column: margin
+y8_log <- log(TS280$y8)
+y8_log_return <- periodReturn(y8_log, period="daily", type="log")
+
+## Plotting Log Transformed y8 Price
+tibble(df2 = y8_log) %>%
+  ggplot(aes(zoo::index(TS280), df2)) +
+  geom_line() +
+scale_x_date(date_breaks = "1 year", date_labels = "%b-%Y")+
+  labs(
+    title = "Log Transformed y8 Price",
+    subtitle = paste0("Number of observations: ", length(TS280$y8)),
+    caption = "source: TSA 2024",
+    x="",
+    y=""
+  )
+```
+
+Plotting return of log transferred **y8** prices
+
+```{r}
+#| column: margin
+tibble(df3 = y8_log_return) %>%
+  ggplot(aes(zoo::index(TS280), df3)) +
+  geom_line() +
+scale_x_date(date_breaks = "1 year", date_labels = "%b-%Y")+
+  labs(
+    title = "Log Transformed y8 return",
+    subtitle = paste0("Number of observations: ", length(TS280$y8)),
+    caption = "source: TSA 2024",
+    x="",
+    y=""
+  )
+```
+
+```{r echo=FALSE}
+#Table 1. Stationary test of data start here
+
+adf.y8 <- adf.test(TS280$y8)
+pp.y8 <- pp.test(TS280$y8)
+bg.y8 <- bgtest(adfTest(TS280$y8, lags = 0, type = "c")@test$lm$residuals~1, order = 1)
+
+results_y8 <- data.frame()
+results_y8 <- stationary_test_data(results_y8, "y8", "01/06/2021~07/03/2022", adf.y8, pp.y8, bg.y8)
+
+adf.y8_log <- adf.test(y8_log)  
+pp.y8_log <- pp.test(y8_log)  
+bg.y8_log <- bgtest(adfTest(y8_log, lags = 0, type = "c")@test$lm$residuals~1, order = 1)
+
+results_y8 <- stationary_test_data(results_y8, "y8 log", "01/06/2021~07/03/2022", adf.y8_log, pp.y8_log, bg.y8_log)
+
+adf.y8_log_return <- adf.test(y8_log_return)  
+pp.y8_log_return <- pp.test(y8_log_return)  
+bg.y8_log_return <- bgtest(adfTest(y8_log_return, lags = 0, type = "c")@test$lm$residuals~1, order = 1)
+
+results_y8 <- stationary_test_data(results_y8, "y8 log return", "01/06/2021~07/03/2033", adf.y8_log_return, pp.y8_log_return, bg.y8_log_return)
+
+```
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+results_y8
+```
+:::
+Result shows **y8 log return** is stationary
+
+Plotting ACF and PACF for **y8 log return**
+
+::: {.layout-example .column-page-right .left}
+```{r, out.width="100%"}
+#| layout-ncol: 2
+plot_acf_pacf(y8_log_return)
+```
+:::
 
 
+ACF and PACF suggest initially 4 lags MA and 0 lag AR process.
+
+### 5.2 step 2 & 3: Estimation and Diagnostics
+
+We will take all the possible combination of ARIMA having p from 0 to 4 and q also from 0 to 4. It will help to see possible models with respective AIC and BIC.
+
+```{r}
+y8_models_detail <- data.frame()
+for (p in 0:4) {
+  for (q in 0:4) {
+    if(! (p==0 & q==0)){
+    cur_model <- Arima(y8_log_return, order=c(p,1,q))
+    y8_models_detail <- model_summary(y8_models_detail, paste("c(",p,",1,",q,")",sep=""), cur_model)
+  }
+  }
+}
+```
+
+::: {.layout-example .column-page-right .left}
+```{r}
+y8_models_detail
+```
+:::
+
+Find the model with the minimum AIC value
+```{r}
+y8_aic_ind <- which.min(y8_models_detail$AIC_Value)
+# Extract the row with the minimum value
+min_row <- y8_models_detail[y8_aic_ind, ]
+print(min_row)
+```
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+min_row
+```
+:::
+
+Find the model with the minimum BIC value
+```{r}
+y8_bic_ind <- which.min(y8_models_detail$BIC_Value)
+# Extract the row with the minimum value
+min_row <- y8_models_detail[y8_bic_ind, ]
+```
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+min_row
+```
+:::
+
+Analyzing **ARIMA(2,1,3)** for y8 log return series
+
+```{r echo=FALSE}
+#Analyzing (4,1,4)
+y8_model_213 <- Arima(y8_log_return, order=c(2,1,3))
+
+# Diagnostics
+y8_residuals_213 = resid(y8_model_213)
+```
+
+Plotting ACF and PACF of y8 log return residuals
+
+::: {.layout-example .column-page-right .left}
+```{r, out.width="100%"}
+#| layout-ncol: 2
+#plot acf and pacf for residuals
+plot_acf_pacf(y8_residuals_213)
+```
+:::
+
+ACF plot at certain lags like 4, 6 and 10 etc indicate that the residuals are correlated at those lags, suggesting the presence of autocorrelation.
+
+PACF plot indicate that there is a direct correlation between the residuals at specific lags like 3, 4, and 5 etc, after removing the influence of the previous lags.
+
+Performing ADF/BG test for y8 log returned residuals
+
+```{r}
+y8_residuals_acf_test_213 <- data.frame()
+adf.y8_residuals_213 <- adf.test(y8_residuals_213)  
+pp.y8_residuals_213 <- pp.test(y8_residuals_213)
+bg.y8_residuals_213 <- bgtest(adfTest(y8_residuals_213, lags = 0, type = "c")@test$lm$residuals~1, order = 1)
+
+y8_residuals_acf_test_213 <- stationary_test_data(y8_residuals_acf_test_213, "Model (2,1,3) residuals", "01/01/2012~14/05/2013", adf.y8_residuals_213, pp.y8_residuals_213, bg.y8_residuals_213)
+```
 
 
+::: {.layout-example .column-page-right .left}
+```{r}
+y8_residuals_acf_test_213
+```
+:::
+
+All above test (ADF,PP and BG) suggest there is no significant autocorrelation in residuals.
+
+Performing  **Ljung-Box** test for autocorrelation in residuals
+
+```{r}
+# Ljung-Box test for autocorrelation in residuals
+Box.test(y8_residuals_213, type = "Ljung-Box", lag = 10)
+
+coeftest(y8_model_213)
+```
+
+It shows all the parameters are significant and for 10 lags Ljung-Box p-value \< .05 suggests there is significant autocorrelation in residuals.
+
+Analyzing next suggested model **ARIMA(4,1,4)** Plotting ACF and PACF
+
+```{r echo=FALSE}
+y8_model_414 <- Arima(y8_log_return, order=c(4,1,4))
+
+# Diagnostics
+y8_residuals_414 = resid(y8_model_414)
+```
+
+Plotting ACF and PACF of y8 log return residuals
+
+::: {.layout-example .column-page-right .left}
+```{r, out.width="100%"}
+#| layout-ncol: 2
+#plot acf and pacf for residuals
+plot_acf_pacf(y8_residuals_414)
+```
+:::
+
+ACF looks much better but still few lag shows autocorrelation in residuals.
+
+PACF looks almost same and high direct correlation in residuals.
+
+Performing ADF,PP and BG test
+
+```{r echo=FALSE}
+y8_residuals_acf_test_414 <- data.frame()
+adf.y8_residuals_414 <- adf.test(y8_residuals_414)  
+pp.y8_residuals_414 <- pp.test(y8_residuals_414)  
+bg.y8_residuals_414 <- bgtest(adfTest(y8_residuals_414, lags = 0, type = "c")@test$lm$residuals~1, order = 1)
+
+y8_residuals_acf_test_414 <- stationary_test_data(y8_residuals_acf_test_414, "Log transformed data", "01/01/2012~14/05/2013", adf.y8_residuals_414, pp.y8_residuals_414, bg.y8_residuals_414)
+```
+
+::: {.layout-example .column-page-right .left}
+```{r}
+y8_residuals_acf_test_414
+```
+:::
+
+
+All above test (ADF,PP and BG) suggest there is no significant autocorrelation in residuals.
+
+Performing  **Ljung-Box** test for autocorrelation in residuals
+
+```{r}
+# Ljung-Box test for autocorrelation in residuals
+# as https://robjhyndman.com/hyndsight/ljung-box-test/ suitable value for lag is 10
+Box.test(y8_residuals_414, type = "Ljung-Box", lag = 10)
+
+coeftest(y8_model_414)
+```
+
+It shows not all parameters are significant and for 10 lags Ljung-Box p-value \>.05 suggests there is no significant autocorrelation in residuals.
+
+As ar1 and ma1 as well, we can remove them from model
+
+Plotting ACF/PACF after adusting the model
+
+```{r}
+y8_model_414_modified <- Arima(y8_log_return, order=c(4,1,4),
+                      fixed = c(NA, 0, NA, NA, 0, NA, NA, NA))
+
+y8_residuals_414_modified = resid(y8_model_414_modified)
+```
+
+::: {.layout-example .column-page-right .left}
+```{r, out.width="100%"}
+#| layout-ncol: 2
+#plot acf and pacf for residuals
+plot_acf_pacf(y8_residuals_414_modified)
+```
+:::
+
+Here we can see no improvement on both graphs
+
+Performing  **Ljung-Box** test for autocorrelation in residuals for adjusted model
+
+```{r}
+Box.test(y8_residuals_414_modified, type = "Ljung-Box", lag = 10)
+coeftest(y8_model_414_modified)
+# Ljung-Box p value is 0.04991 < .05 reject the null hypothesis that residuals are non auto
+# correlated, earlier model shows p value 0.2033 > .05 failed to reject the null hypothesis therefore 
+# residuals are white noise and model 413 is best accepted model
+```
+
+p-value \< .05 suggest there is significant autocorrelation in residuals.
+
+So out of discussed three models we confirmed to select (4,1,4) (unmodified one)
+
+### 5.3 Forecasting Results
+We are forecasting for 20 days ahead
+```{r}
+y8_model_414.forecast <- forecast(y8_model_414, h = 20)
+```
+
+Converting log returned forecast to predicted prices
+
+::: {.layout-example .column-page-right .left}
+```{r}
+last_observed_price <- tail(TS280$y8,1) 
+# Convert log returns to actual price forecasts
+forecasted_prices <- numeric(length(y8_model_414.forecast$mean))
+
+forecasted_prices[1] <- last_observed_price * 
+  exp(y8_model_414.forecast$mean[1])
+
+for (i in 2:length(forecasted_prices)) {
+  forecasted_prices[i] <- forecasted_prices[i-1] * exp(y8_model_414.forecast$mean[i])
+}
+
+y8_arima_forecast <- xts(forecasted_prices, tail(index(TS2), 20))
+
+names(y8_arima_forecast) <- c("y8_arima_forecast")
+
+TS <- merge(TS,y8_arima_forecast)
+
+```
+:::
+
+```{r}
+plot(TS[index(TS) > as.Date("2022-02-28"), c("y8", "y8_arima_forecast")], 
+  main = "20 days forecast of y8 prices via ARIMA",
+  col = c("black", "blue"))
+```
+
+### 5.4 Forecasting Erros
+
+calculating ex-post forecast errors for both series on the out-of-sample period.
+
+```{r echo=FALSE}
+errors_matrix <- calculate_errors(errors_matrix, TS$y8, TS$y8_arima_forecast,"y8_arima")
+errors_matrix["y8_arima",]
+```
+
+## 6 VECM Vs ARIMAs forecasts
+Data frame used to capture all respective forecast errors, shows error matrix.
+```{r echo=FALSE}
+errors_matrix
+errors_matrix$Index <- rownames(errors_matrix)
+
+# Reshape data to long format
+df_long <- errors_matrix %>%
+  pivot_longer(cols = c("MAE", "MSE", "MAPE", "AMAPE"), names_to = "Variable", values_to = "Value")
+```
+
+In multi-column graph it looks like
+
+::: {.layout-example .column-page-right .left}
+``` {r}
+ggplot(df_long, aes(x = Value, y = Index, fill = Variable)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Multi-Column Plot with Models as Columns", x = "Errors", y = "Models") +
+  theme_minimal()
+```
+:::
+
+- **MAE** : Forecast of y4 using ARIMA shows the smaller absolute errors on average. This looks very attractive, but can be explained as visible from the out-of-sample forecast, here forecast grouped into two parts, almost 50% below actual values and remaining above actual values cancel out each other. In reality out-of-sample forecasting y4 using VECM plot for each data points are more closer to actual values and hence shows promising result. Sample explanation apply to comparing smaller value of y8 ARIMA 1.5054579 vs y8 VECM 1.9383977.
+
+- **MSE** : Lower the squared error implies more weight to larger error, MAE explained above is justified here. We can see y4 via ARIMA (0.7865475) is lower compare to y4 via VECM (1.3990977) and signified the fact more weight is given to larger errors. Same apply to smaller value of y8 via ARIMA (2.7980167) compare to y8 via VECM (5.2300808).
+
+- **MAPE** : Lower values signify smaller % error on average. Ideally it should be smaller for y4 (VECM) compare to y4 (ARIMA) but in our case it's not ( y4 (ARIMA) 0.0044117 \< y 4 (VECM) 0.0056067). It could be most possible as we are forecasting ahead 20 data points which is lager than sum of parameters p+q ( 4+3 = 7) of ARIMA model. Best possible forecasting should be ahead \< 7 data points and model should be recalculated after extending in sample data set adding past forecated data points. Same explanation goes with y8 (ARIMA) vs y8 (VECM).
+
+- **AMAPE** : Lower the value implies adjusted well for bias in MAPE, particularly when actual and forecast values are far apart. In our case y4 (ARIMA) 0.0022082 compare to y4 (VECM) 0.0028136 exactly try to do the same and same apply to y8 (ARIMA) 0.0051174 \< y8 (VECM) 0.0065978

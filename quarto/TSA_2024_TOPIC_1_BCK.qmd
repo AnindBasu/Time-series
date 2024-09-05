@@ -1,0 +1,365 @@
+---
+title: "Time Series 2024 Project Topic 1 (FORECASTING FINANCIAL INSTRUMENTS PRICES WITH VECM AND ARIMA MODELS)"
+author: "Anindita Basu & Vikram Bahadur"
+editor: visual
+date: "`r Sys.Date()`"
+format: 
+  html:
+    toc: true
+    toc-depth: 2
+    toc-location: left
+    smooth-scroll: true
+    toc-title: Contents
+    tbl-cap-location: bottom
+    lof: true
+    lot: true
+    theme: spacelab
+    highlight: tango
+    df-print: kable
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo    = TRUE, 
+                      cache   = FALSE, #https://yihui.org/knitr/options/#cache
+                      message = FALSE, 
+                      warning = FALSE)
+options(scipen = 10)
+library(knitr)
+
+```
+
+## 1 Importing the data
+
+First, let's load necessary libraries:
+
+```{r cache = F}
+library(xts)
+library(lmtest)
+library(tidyverse)
+```
+
+Let's also load the additional function:
+
+```{r}
+source("../code/functions/testdf.R")
+```
+
+We will work with the Data concerning price indices:
+
+-   CPI - Consumer Price Index for All Urban Consumers: Energy, 1982=100, https://fred.stlouisfed.org/series/CPIENGSL
+-   PPI - Producer Price Index: Finished Energy Goods, 1982=100, https://fred.stlouisfed.org/series/WPSFD4121
+-   Monthly data: 01.1986-02.2019
+-   Source: U.S. Department of Labor, Bureau of Labor Statistics
+-   Economic Data - FRED(R) II - http://research.stlouisfed.org/fred2/
+
+Now, we have to import the data:
+
+```{r}
+TS <- read.csv("../data/TSA_2024_project_data_1.csv")
+```
+
+The structure of the data:
+
+```{r}
+TS %>% glimpse()
+head(TS)
+tail(TS)
+```
+
+We have to correct the type of the `date` variable:
+
+```{r}
+TS$date <- as.Date(TS$date, format = "%Y-%m-%d")
+TS %>% glimpse()
+```
+
+Let's also transform the `data.frame` into an `xts` object
+
+```{r}
+TS <- xts(TS[, -1], order.by = TS$date)
+```
+
+We will work the the `cpi` and `ppi` variables. Let's create their first differences.
+
+```{r}
+TS$dy1 <- diff.xts(TS$y1)
+TS$dy2 <- diff.xts(TS$y2)
+TS$dy3 <- diff.xts(TS$y3)
+TS$dy4 <- diff.xts(TS$y4)
+TS$dy5 <- diff.xts(TS$y5)
+TS$dy6 <- diff.xts(TS$y6)
+TS$dy7 <- diff.xts(TS$y7)
+TS$dy8 <- diff.xts(TS$y8)
+TS$dy9 <- diff.xts(TS$y9)
+TS$dy10 <- diff.xts(TS$y10)
+```
+
+```{r}
+head(TS)
+```
+
+Next, we plot both variables on the graph:
+
+```{r}
+plot(TS[, 1:10],
+     col = c("black", "blue", "green", "yellow", "brown", "red", "orange", "khaki", "skyblue", "purple"),
+     major.ticks = "years", 
+     grid.ticks.on = "years",
+     grid.ticks.lty = 3,
+     main = "main",
+     legend.loc = "topleft")
+
+```
+
+Diff
+
+```         
+
+
+plot(TS[, 11:20],
+
+     major.ticks = "months", 
+     grid.ticks.on = "days",
+
+     main = "...",
+     legend.loc = "..")
+```
+
+Alternatively, using the `ggplot2` package:
+
+```{r}
+
+```
+
+## 2 Testing cointegration
+
+In the next step, we will perform the tests of integration order.
+
+First, let's apply the ADF test for the `cpi` variable and its first differences.
+
+```{r}
+testdf(variable = TS$y1,
+       max.augmentations = 3)
+testdf(variable = TS$dy1, 
+       max.augmentations = 3)
+```
+
+Since we can reject the null in the case of the first differences, we can conclude that the y1 is from I(1).
+
+```{r}
+testdf(variable = TS$y2,
+       max.augmentations = 3)
+testdf(variable = TS$dy2, 
+       max.augmentations = 3)
+
+```
+
+```{r}
+testdf(variable = TS$y3,
+       max.augmentations = 3)
+testdf(variable = TS$dy3, 
+       max.augmentations = 3)
+```
+
+```{r}
+testdf(variable = TS$y4,
+       max.augmentations = 3)
+testdf(variable = TS$dy4, 
+       max.augmentations = 3)
+```
+
+```{r}
+testdf(variable = TS$y5,
+       max.augmentations = 3)
+testdf(variable = TS$dy5, 
+       max.augmentations = 3)
+```
+
+```{r}
+testdf(variable = TS$y6,
+       max.augmentations = 3)
+testdf(variable = TS$dy6, 
+       max.augmentations = 3)
+```
+
+```{r}
+testdf(variable = TS$y7,
+       max.augmentations = 3)
+testdf(variable = TS$dy7, 
+       max.augmentations = 3)
+```
+
+```{r}
+testdf(variable = TS$y8,
+       max.augmentations = 3)
+testdf(variable = TS$dy8, 
+       max.augmentations = 3)
+```
+
+```{r}
+testdf(variable = TS$y9,
+       max.augmentations = 3)
+testdf(variable = TS$dy9, 
+       max.augmentations = 3)
+```
+
+```{r}
+testdf(variable = TS$y10,
+       max.augmentations = 3)
+testdf(variable = TS$dy10, 
+       max.augmentations = 3)
+```
+
+Since we can reject the null in the case of the first differences, we can conclude that the yi is from I(1) (i=1,2,3.....)
+
+Again, we can conclude that the `ppi` is integrated of order 1, as we can reject the null in the case of the first differences.
+
+As a result, both variables are $\sim I(1)$, so in the next step we can check whether they are **cointegrated**.
+
+To estimating the cointegrating vector, we will estimate the following model:
+
+```{r}
+model.coint <- lm(y2 ~ y7, data = TS)
+```
+
+Let's examine the model summary:
+
+```{r}
+summary(model.coint)
+```
+
+Next, we have to test stationarity of residuals. What is the proper ADF statistic?
+
+```{r}
+testdf(variable = residuals(model.coint), max.augmentations = 3)
+```
+
+What is the result of cointegration test? What is the cointegrating vector?
+
+The ADF test with no augmentations can be used its result is that non-stationarity of residuals is **STRONGLY REJECTED**, so residuals are **stationary**, which means that `ppi` and `cpi` are **cointegrated**.
+
+The cointegrating vector is \[1, `r -summary(model.coint)$coefficients[1, 1] %>% round(3)` , `r -summary(model.coint)$coefficients[2, 1] %>% round(3)`\]
+
+which defines the cointegrating relationship as: 1 \* cpi - `r summary(model.coint)$coefficients[1, 1] %>% round(3)` - `r summary(model.coint)$coefficients[2, 1] %>% round(3)` \* ppi,
+
+Now, let's create first lags of residuals and adding them to the dataset
+
+```{r echo=FALSE}
+Y <- c('y1', 'y2', 'y3', 'y4', 'y5', 'y6', 'y7', 'y8', 'y9', 'y10')
+
+df_res <- data.frame(pair=NULL, p_adf=NULL, result=NULL, cointegration_vector=NULL)
+cointvec <- "NULL"
+for (i in 1:9) {
+  for (j in (i + 1):10) {
+    #print(paste("(y=",i,",y=",j,")"))
+    model.coint <- lm(formula = paste(Y[i], "~", Y[j]), data = TS)
+    redf <- testdf(variable = residuals(model.coint), max.augmentations = 3)
+    #print(redf)
+    if (redf$p_adf[1] < .05) {
+      result <- "Conintegrated"
+      cointvec = paste("[1,",unname(coef(model.coint))[1], ",",unname(coef(model.coint))[2],"]")
+    } else {
+      result <- "Not Conintegrated"
+      cointvec <- ""
+    }
+    new_row <- data.frame(pair=paste("(y=",i,",y=",j,")"), p_adf=redf$p_adf[1], result=result, cointegration_vector=cointvec)
+    df_res <- rbind(df_res, new_row)
+    }
+}
+```
+
+```{r}
+df_res
+#dim(df_res)
+```
+
+\`\`{r} ppi_cpi\$lresid \<- lag.xts(residuals(model.coint))
+
+```         
+
+## 3 Estimating ECM
+
+We are ready to estimate the ECM model, which is described by the following functional form:
+
+$$\Delta \mathsf{cpi}_t = \alpha_0 + \alpha_1\Delta \mathsf{ppi}_t + \alpha_2(\mathsf{cpi}_{t-1} - \beta_0 - \beta_1\mathsf{ppi}_{t-1}) + \varepsilon_t$$
+{r}
+model.ecm <- lm(dcpi ~ dppi + lresid, data = ppi_cpi) 
+```
+
+Let's see the model summary: {r} summary(model.ecm)
+
+```         
+
+The intercept is insignificant, hence we can remove it from the model:
+
+{r}
+model.ecm <- lm(dcpi ~ dppi + lresid - 1,
+                # -1 denotes a model without a constant
+                data = ppi_cpi) 
+```
+
+Let's see the model summary again: {r} summary(model.ecm)
+
+```         
+
+How would you interpret results of the model above?
+
+The parameter r summary(model.ecm)$coefficients[1, 1] %>% round(3)` describes a short term relationship between `cpi` and `ppi`, so if `ppi` increases by 1 then the `cpi` in the **short run** will increase by r summary(model.ecm)$coefficients[1, 1] %>% round(3)`.
+
+The long run relationship is described by the parameter `r summary(model.coint)$coefficients[2, 1] %>% round(3)` from the cointegrating relationship: so if `ppi` increases by 1 in the LONG RUN `cpi` will increase by `r summary(model.coint)$coefficients[2, 1] %>% round(3)`.
+
+The value of r summary(model.ecm)$coefficients[2, 1] %>% round(3)` is the estimate of the *adjustment coefficient*. As expected, its sign is negative and this value means that r -summary(model.ecm)$coefficients[2, 1] %>% round(4)` of the unexpected error (increase in gap) will be corrected in the next period, so any unexpected deviation should be corrected finally on average within about r (1/(-summary(model.ecm)$coefficients[2, 1])) %>% round(1)` periods.
+
+## 4 Granger causality test                                            
+
+Now let's check, whether `ppi` Granger causes `cpi` and vice versa. What is the proper lag length in this case? 
+
+Let's try with 3 lags. First, the `ppi` as the dependent variable:
+{r}
+grangertest(ppi ~ cpi,
+            data = ppi_cpi,
+            order = 3) # lag assumed
+```
+
+Is `cpi` a Granger cause of `ppi`?
+
+Next, the `cpi` as the dependent variable. {r} grangertest(cpi \~ ppi, data = ppi_cpi, order = 3) \# lag assumed
+
+```         
+Is `ppi` a Granger cause of `cpi`?
+
+In both cases the null about **NO CAUSALITY** is **rejected**, at least at the 95% confidence level.
+
+Now, let's repeat the analysis for 4 lags.
+{r}
+grangertest(ppi ~ cpi,
+            data = ppi_cpi,
+            order = 4) # lag assumed
+```
+
+Is `cpi` a Granger cause of `ppi`?
+
+{r} grangertest(cpi \~ ppi, data = ppi_cpi, order = 4) \# lag assumed
+
+```         
+Is `ppi` a Granger cause of `cpi`?
+
+Again, let's repeat the analysis for 5 lags:
+{r}
+grangertest(ppi ~ cpi,
+            data = ppi_cpi,
+            order = 5) # lag assumed
+```
+
+Is `cpi` a Granger cause of `ppi`?
+
+{r} grangertest(cpi \~ ppi, data = ppi_cpi, order = 5) \# lag assumed \`\``Is`ppi`a Granger cause of`cpi\`?
+
+What is the conclusion?
+
+At 5% significance level (or 95% confidence level) we have so called **bi-directional feedback** in all cases.
+
+Now, we have to note, that the Granger causality analysis above is based on the **non-stationary** time series. If we wanted to remove risks of getting spurious regressions, we should rather use the **differenced** time series.

@@ -1,0 +1,269 @@
++ **Let's apply the ADF test for the y1 variable and its first differences.**
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+
+df_var <- testdf(variable = TS280[,Y[1]], max.augmentations = 3, varname = Y[1])
+df_var
+plot(TS280[,Y[1]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",Y[1]))
+```
+:::
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+df_var_diff <- testdf(variable = TS280[,dY[1]], max.augmentations = 3, varname = dY[1])
+df_var_diff
+plot(TS280[,dY[1]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",dY[1]))
+```
+:::
+
++ **Let's apply the ADF test for the y2 variable and its first differences.**
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+
+df_var <- testdf(variable = TS280[,Y[2]], max.augmentations = 3, varname = Y[2])
+df_var
+plot(TS280[,Y[2]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",Y[2]))
+```
+:::
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+df_var_diff <- testdf(variable = TS280[,dY[2]], max.augmentations = 3, varname = dY[2])
+df_var_diff
+plot(TS280[,dY[2]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",dY[2]))
+```
+:::
+
++ **Let's apply the ADF test for the y3 variable and its first differences.**
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+
+df_var <- testdf(variable = TS280[,Y[3]], max.augmentations = 3, varname = Y[3])
+df_var
+plot(TS280[,Y[3]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",Y[3]))
+```
+:::
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+df_var_diff <- testdf(variable = TS280[,dY[3]], max.augmentations = 3, varname = dY[3])
+df_var_diff
+plot(TS280[,dY[3]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",dY[3]))
+```
+:::
+
++ **Let's apply the ADF test for the y4 variable and its first differences.**
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+
+df_var <- testdf(variable = TS280[,Y[4]], max.augmentations = 3, varname = Y[4])
+df_var
+plot(TS280[,Y[4]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",Y[4]))
+```
+:::
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+df_var_diff <- testdf(variable = TS280[,dY[4]], max.augmentations = 3, varname = dY[4])
+df_var_diff
+plot(TS280[,dY[4]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",dY[4]))
+```
+:::
+
++ **Let's apply the ADF test for the y5 variable and its first differences.**
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+
+df_var <- testdf(variable = TS280[,Y[5]], max.augmentations = 3, varname = Y[5])
+df_var
+plot(TS280[,Y[5]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",Y[5]))
+```
+:::
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+df_var_diff <- testdf(variable = TS280[,dY[5]], max.augmentations = 3, varname = dY[5])
+df_var_diff
+plot(TS280[,dY[5]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",dY[5]))
+```
+:::
+
++ **Let's apply the ADF test for the y6 variable and its first differences.**
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+
+df_var <- testdf(variable = TS280[,Y[6]], max.augmentations = 3, varname = Y[6])
+df_var
+plot(TS280[,Y[6]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",Y[6]))
+```
+:::
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+df_var_diff <- testdf(variable = TS280[,dY[6]], max.augmentations = 3, varname = dY[6])
+df_var_diff
+plot(TS280[,dY[6]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",dY[6]))
+```
+:::
+
++ **Let's apply the ADF test for the y7 variable and its first differences.**
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+
+df_var <- testdf(variable = TS280[,Y[7]], max.augmentations = 3, varname = Y[7])
+df_var
+plot(TS280[,Y[7]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",Y[7]))
+```
+:::
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+df_var_diff <- testdf(variable = TS280[,dY[7]], max.augmentations = 3, varname = dY[7])
+df_var_diff
+plot(TS280[,dY[7]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",dY[7]))
+```
+:::
+
++ **Let's apply the ADF test for the y8 variable and its first differences.**
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+
+df_var <- testdf(variable = TS280[,Y[8]], max.augmentations = 3, varname = Y[8])
+df_var
+plot(TS280[,Y[8]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",Y[8]))
+```
+:::
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+df_var_diff <- testdf(variable = TS280[,dY[8]], max.augmentations = 3, varname = dY[8])
+df_var_diff
+plot(TS280[,dY[8]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",dY[8]))
+```
+:::
+
++ **Let's apply the ADF test for the y9 variable and its first differences.**
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+
+df_var <- testdf(variable = TS280[,Y[9]], max.augmentations = 3, varname = Y[9])
+df_var
+plot(TS280[,Y[9]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",Y[9]))
+```
+:::
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+df_var_diff <- testdf(variable = TS280[,dY[9]], max.augmentations = 3, varname = dY[9])
+df_var_diff
+plot(TS280[,dY[9]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",dY[9]))
+```
+:::
+
++ **Let's apply the ADF test for the y10 variable and its first differences.**
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+
+df_var <- testdf(variable = TS280[,Y[10]], max.augmentations = 3, varname = Y[10])
+df_var
+plot(TS280[,Y[10]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",Y[10]))
+```
+:::
+
+::: {.layout-example .column-page-right .left}
+```{r echo=FALSE}
+#| layout-ncol: 2
+#| tbl-cap-location: bottom
+#| tbl-cap: "**Stationarity Test Data**"
+df_var_diff <- testdf(variable = TS280[,dY[10]], max.augmentations = 3, varname = dY[10])
+df_var_diff
+plot(TS280[,dY[10]], type = "l", col = "darkblue", lwd = 1, 
+	     main = paste("Plot of the examined variable",dY[10]))
+```
+:::
