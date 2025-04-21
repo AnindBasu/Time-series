@@ -1,5 +1,4 @@
 **Presentation for the solution of the project can be found at:**  
-[https://rpubs.com/vikrambahadur/TSA_2024](https://rpubs.com/vikrambahadur/TSA_2024)
 
 # TOPIC #1  
 ## FORECASTING FINANCIAL INSTRUMENTS PRICES WITH VECM AND ARIMA MODELS
@@ -18,12 +17,6 @@ The aim of the project is to compare the accuracy of forecasts for prices of two
 - **In-sample period:** 280 observations  
 - **Out-of-sample period:** 20 observations  
 
-### Grading Criteria (Max: 40 points):
-- **Cointegration Check:** 6 pts  
-- **VECM Estimation and Forecasting:** 12 pts  
-- **ARIMA Model Selection and Forecasting:** 12 pts  
-- **Forecast Comparison (VECM vs ARIMA):** 5 pts  
-- **Report Structure and Clarity (RMarkdown):** 5 pts  
 
 ### Detailed Assessment:
 #### 1. **Cointegration Check:**
